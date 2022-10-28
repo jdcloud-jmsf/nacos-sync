@@ -81,6 +81,7 @@ start(){
 echo "$JAVA ${JAVA_OPT}" > ${BASE_DIR}/logs/nacos-sync-start.out 2>&1 &
 nohup $JAVA ${JAVA_OPT} >> ${BASE_DIR}/logs/nacos-sync-start.out 2>&1 &
 echo "nacos-sync is starting，you can check the ${BASE_DIR}/logs/nacos-sync-start.out"
+tail -f ${BASE_DIR}/logs/nacos-sync-start.out
 
 }
 
