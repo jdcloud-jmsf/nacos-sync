@@ -12,8 +12,14 @@
  */
 package com.alibaba.nacossync.extension.holder;
 
+import com.alibaba.nacossync.dao.ClusterAccessService;
+import com.alibaba.nacossync.pojo.model.ClusterDO;
 import com.ecwid.consul.v1.ConsulClient;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -29,12 +35,26 @@ public class ConsulServerHolder extends AbstractServerHolderImpl<ConsulClient> {
 
     public static final String HTTP = "http://";
 
+    private final ClusterAccessService clusterAccessService;
+
+    private static final Map<String, String> tokenMap = new ConcurrentHashMap<>();
+
+    public ConsulServerHolder(ClusterAccessService clusterAccessService) {
+        this.clusterAccessService = clusterAccessService;
+    }
+
     @Override
     ConsulClient createServer(String clusterId, Supplier<String> serverAddressSupplier) throws Exception {
+        ClusterDO clusterDO = clusterAccessService.findByClusterId(clusterId);
+        tokenMap.put(clusterId, clusterDO.getPassword());
         String serverAddress = serverAddressSupplier.get();
         serverAddress = serverAddress.startsWith(HTTP) ? serverAddress : HTTP + serverAddress;
         URL url = new URL(serverAddress);
         return new ConsulClient(url.getHost(), url.getPort());
+    }
+
+    public static String getToken(String clusterId) {
+        return tokenMap.get(clusterId);
     }
 
 }

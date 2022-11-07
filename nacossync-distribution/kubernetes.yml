@@ -37,6 +37,14 @@ items:
       spec:
         containers:
         - env:
+          - name: MYSQL_HOST
+            value: mysql.nacos.svc
+          - name: MYSQL_PORT
+            value: '3306'
+          - name: MYSQL_USERNAME
+            value: root
+          - name: MYSQL_PASSWORD
+            value: root
           - name: KUBERNETES_NAMESPACE
             valueFrom:
               fieldRef:
@@ -45,7 +53,7 @@ items:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          image: hub.jdcloud.com/mesh/nacos-sync:0.4.8-7bd2bdd
+          image: hub-pub.jdcloud.com/mesh/nacos-sync:0.4.8-07f83c3
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
