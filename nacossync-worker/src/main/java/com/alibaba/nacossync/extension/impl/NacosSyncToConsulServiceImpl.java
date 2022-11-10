@@ -28,6 +28,7 @@ import com.alibaba.nacossync.monitor.MetricsManager;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.util.ConsulUtils;
 import com.alibaba.nacossync.util.NacosUtils;
+import com.alibaba.nacossync.util.StringUtils;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
@@ -37,10 +38,7 @@ import com.google.common.collect.Lists;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -90,7 +88,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
 
                 if (needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO)) {
                     consulClient.agentServiceDeregister(URLEncoder
-                            .encode(healthService.getService().getId(), StandardCharsets.UTF_8.name()),
+                                    .encode(healthService.getService().getId(), StandardCharsets.UTF_8.name()),
                             ConsulServerHolder.getToken(taskDO.getDestClusterId()));
                 }
             }
@@ -136,7 +134,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                                     && !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
                                     healthService.getService().getPort()))) {
                                 consulClient.agentServiceDeregister(URLEncoder
-                                        .encode(healthService.getService().getId(), StandardCharsets.UTF_8.toString()),
+                                                .encode(healthService.getService().getId(), StandardCharsets.UTF_8.toString()),
                                         ConsulServerHolder.getToken(taskDO.getDestClusterId()));
                             }
                         }
@@ -166,7 +164,11 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         newService.setAddress(instance.getIp());
         newService.setPort(instance.getPort());
         newService.setName(taskDO.getServiceName());
-        newService.setId(instance.getInstanceId());
+        if (!StringUtils.isEmpty(instance.getInstanceId())) {
+            newService.setId(instance.getInstanceId());
+        } else {
+            newService.setId(taskDO.getServiceName() + "-" + instance.getIp() + "-" + instance.getPort());
+        }
         List<String> tags = Lists.newArrayList();
         tags.addAll(instance.getMetadata().entrySet().stream()
                 .map(entry -> String.join("=", entry.getKey(), entry.getValue())).collect(Collectors.toList()));
@@ -175,7 +177,19 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 skyWalkerCacheServices.getClusterType(taskDO.getSourceClusterId()).getCode()));
         tags.add(String.join("=", SkyWalkerConstants.SOURCE_CLUSTERID_KEY, taskDO.getSourceClusterId()));
         newService.setTags(tags);
+        newService.setMeta(convertMeta(instance.getMetadata()));
         return newService;
+    }
+
+    private Map<String, String> convertMeta(Map<String, String> metadata) {
+        Map<String, String> meta = new HashMap<>(metadata.size());
+        metadata.forEach((s, s2) -> {
+            if (s.contains(".")) {
+                s = s.replace(".", "-");
+            }
+            meta.put(s, s2);
+        });
+        return meta;
     }
 
 }
