@@ -34,6 +34,8 @@ const I18N_CONF = {
     namespacePlaceholder: '请输入命名空间',
     password: '密码',
     passwordPlaceholder: '请输入密码',
+    token: '秘钥',
+    tokenPlaceholder: '请输入秘钥',
     username: '用户名',
     usernamePlaceholder: '请输入用户名',
     clusterType: '集群类型',

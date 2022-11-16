@@ -78,6 +78,19 @@ class AddConfigDialog extends React.Component {
               </Select>
             </FormItem>
             {
+              this.state.clusterType === 'CONSUL' && (
+                <>
+                  <FormItem
+                    label={`${locale.token}:`}
+                  >
+                    <Input.Password
+                      placeholder={locale.tokenPlaceholder}
+                      onChange={pw => this.setState({ password: pw })}
+                    />
+                  </FormItem>
+                </>)
+            }
+            {
               this.state.clusterType === 'NACOS' && (
               <>
                 <FormItem

@@ -178,6 +178,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         tags.add(String.join("=", SkyWalkerConstants.SOURCE_CLUSTERID_KEY, taskDO.getSourceClusterId()));
         newService.setTags(tags);
         newService.setMeta(convertMeta(instance.getMetadata()));
+        // newService.setCheck(new NewService.Check());
         return newService;
     }
 
