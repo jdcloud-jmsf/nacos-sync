@@ -1,4 +1,4 @@
-version=0.4.8-$(shell git rev-parse --short HEAD)
+version=0.4.9-$(shell git rev-parse --short HEAD)
 
 all-sync: clean build image-sync docker-login push-sync deploy-sync
 

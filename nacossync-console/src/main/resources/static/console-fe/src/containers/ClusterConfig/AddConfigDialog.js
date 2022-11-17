@@ -68,7 +68,7 @@ class AddConfigDialog extends React.Component {
             </FormItem>
             <FormItem label={`${locale.clusterType}:`}>
               <Select
-                onChange={clusterType => this.setState({ clusterType })}
+                onChange={ct => this.setState({ clusterType: ct, namespace: '', userName: '', password: '' })}
               >
                 {
                                 types.map(type => (
