@@ -153,6 +153,9 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
         metaData.put(SkyWalkerConstants.SYNC_SOURCE_KEY,
                 skyWalkerCacheServices.getClusterType(taskDO.getSourceClusterId()).getCode());
         metaData.put(SkyWalkerConstants.SOURCE_CLUSTERID_KEY, taskDO.getSourceClusterId());
+        if (null != instance.getService().getMeta()) {
+            metaData.putAll(instance.getService().getMeta());
+        }
         temp.setMetadata(metaData);
         return temp;
     }
