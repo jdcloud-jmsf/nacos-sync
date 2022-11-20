@@ -11,9 +11,6 @@ build:
 image-sync:
 	docker build --platform linux/amd64 -t hub.jdcloud.com/mesh/nacos-sync:${version} ./
 
-docker-login:
-	docker login hub.jdcloud.com -u 'jrwangwei3' -p 'Jmsf1234'
-
 push-sync:
 	docker push hub.jdcloud.com/mesh/nacos-sync:${version}
 

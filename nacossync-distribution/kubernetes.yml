@@ -53,7 +53,7 @@ items:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          image: hub-pub.jdcloud.com/mesh/nacos-sync:0.4.9-a89262d
+          image: hub-pub.jdcloud.com/mesh/nacos-sync:0.4.9-aad9655
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
