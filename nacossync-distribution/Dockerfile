@@ -1,4 +1,4 @@
-FROM openjdk:11.0.16-jre
+FROM hub.jdcloud.com/mesh/openjdk:11-jre
 #FROM arm64v8/openjdk:11 # for ARM64
 MAINTAINER Zhiguo.Chen<chenzhiguo@jd.com>
 USER root

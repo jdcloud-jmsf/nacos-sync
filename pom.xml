@@ -25,7 +25,7 @@
     </modules>
     <packaging>pom</packaging>
     <properties>
-        <revision>0.4.9</revision>
+        <revision>0.4.10</revision>
         <spring-boot.version>2.5.14</spring-boot.version>
         <spring-cloud.version>2020.0.2</spring-cloud.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
