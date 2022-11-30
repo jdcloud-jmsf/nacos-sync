@@ -30,22 +30,22 @@ import static com.alibaba.nacossync.util.NacosUtils.getGroupNameOrDefault;
 
 @Slf4j
 public abstract class AbstractNacosSync implements SyncService {
-    
+
     private final Map<String, EventListener> listenerMap = new ConcurrentHashMap<>();
-    
+
     private final Map<String, Set<String>> sourceInstanceSnapshot = new ConcurrentHashMap<>();
-    
+
     private final Map<String, Integer> syncTaskTap = new ConcurrentHashMap<>();
-    
+
     private final ConcurrentHashMap<String, TaskDO> allSyncTaskMap = new ConcurrentHashMap<>();
-    
+
     @Autowired
     private MetricsManager metricsManager;
-    
+
     @Autowired
     private NacosServerHolder nacosServerHolder;
-    
-    
+
+
     /**
      * 因为网络故障等原因，nacos sync的同步任务会失败，导致目标集群注册中心缺少同步实例， 为避免目标集群注册中心长时间缺少同步实例，每隔5分钟启动一个兜底工作线程执行一遍全部的同步任务。
      */
@@ -57,12 +57,12 @@ public abstract class AbstractNacosSync implements SyncService {
             t.setName("com.alibaba.nacossync.basic.synctask");
             return t;
         });
-        
+
         executorService.scheduleWithFixedDelay(() -> {
             if (allSyncTaskMap.size() == 0) {
                 return;
             }
-            
+
             try {
                 for (TaskDO taskDO : allSyncTaskMap.values()) {
                     String taskId = taskDO.getTaskId();
@@ -79,7 +79,7 @@ public abstract class AbstractNacosSync implements SyncService {
             }
         }, 0, 300, TimeUnit.SECONDS);
     }
-    
+
     @Override
     public boolean delete(TaskDO taskDO) {
         try {
@@ -89,7 +89,7 @@ public abstract class AbstractNacosSync implements SyncService {
                     listenerMap.remove(taskDO.getTaskId()));
             sourceInstanceSnapshot.remove(taskDO.getTaskId());
             allSyncTaskMap.remove(taskDO.getTaskId());
-            
+            log.info("停止同步实例，taskDO={}", taskDO);
             // 删除目标集群中同步的实例列表
             deregisterInstance(taskDO);
         } catch (Exception e) {
@@ -99,7 +99,7 @@ public abstract class AbstractNacosSync implements SyncService {
         }
         return true;
     }
-    
+
     @Override
     public boolean sync(TaskDO taskDO) {
         String taskId = taskDO.getTaskId();
@@ -127,10 +127,10 @@ public abstract class AbstractNacosSync implements SyncService {
         }
         return true;
     }
-    
+
     private void doSync(String taskId, TaskDO taskDO, NamingService sourceNamingService) throws NacosException {
         if (syncTaskTap.putIfAbsent(taskId, 1) != null) {
-            log.info("任务Id:{}上一个同步任务尚未结束", taskId);
+            log.info("taskDO:{}上一个同步任务尚未结束", taskDO);
             return;
         }
         try {
@@ -139,14 +139,14 @@ public abstract class AbstractNacosSync implements SyncService {
                     getGroupNameOrDefault(taskDO.getGroupName()), new ArrayList<>(), true);
             // 先删除不存在的
             this.removeInvalidInstance(taskDO, sourceInstances);
-            
+            log.info("开始同步实例，taskDO={}, 实例个数={}", taskDO, sourceInstances.size());
             // 同步实例
             this.syncNewInstance(taskDO, sourceInstances);
         } finally {
             syncTaskTap.remove(taskId);
         }
     }
-    
+
     private void syncNewInstance(TaskDO taskDO, List<Instance> sourceInstances) throws NacosException {
         Set<String> latestSyncInstance = new TreeSet<>();
         //再次添加新实例
@@ -161,17 +161,17 @@ public abstract class AbstractNacosSync implements SyncService {
                 latestSyncInstance.add(instanceKey);
             }
         }
-        
+
         if (CollectionUtils.isNotEmpty(latestSyncInstance)) {
-            log.info("任务Id:{},已同步实例个数:{}", taskId, latestSyncInstance.size());
+            log.info("taskDO:{},已同步实例个数:{}", taskDO, latestSyncInstance.size());
             sourceInstanceSnapshot.put(taskId, latestSyncInstance);
         } else {
             // latestSyncInstance为空表示源集群中需要同步的所有实例（即非nacos-sync同步过来的实例）已经下线,清除本地持有快照
             sourceInstanceSnapshot.remove(taskId);
         }
     }
-    
-    
+
+
     private void removeInvalidInstance(TaskDO taskDO, List<Instance> sourceInstances) throws NacosException {
         String taskId = taskDO.getTaskId();
         if (this.sourceInstanceSnapshot.containsKey(taskId)) {
@@ -181,20 +181,20 @@ public abstract class AbstractNacosSync implements SyncService {
                     .collect(Collectors.toSet());
             oldInstanceKeys.removeAll(newInstanceKeys);
             if (CollectionUtils.isNotEmpty(oldInstanceKeys)) {
-                log.info("任务Id:{},移除无效同步实例:{}", taskId, oldInstanceKeys);
+                log.info("taskDO:{},移除无效同步实例:{}", taskDO, oldInstanceKeys);
                 removeInvalidInstance(taskDO, oldInstanceKeys);
             }
         }
     }
-    
+
     public abstract String composeInstanceKey(String ip, int port);
-    
+
     public abstract void register(TaskDO taskDO, Instance instance);
-    
+
     public abstract void deregisterInstance(TaskDO taskDO) throws Exception;
-    
+
     public abstract void removeInvalidInstance(TaskDO taskDO, Set<String> invalidInstanceKeys);
-    
+
     public NacosServerHolder getNacosServerHolder() {
         return nacosServerHolder;
     }

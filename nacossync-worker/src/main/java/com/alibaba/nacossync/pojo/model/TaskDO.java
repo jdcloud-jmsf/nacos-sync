@@ -56,7 +56,7 @@ public class TaskDO implements Serializable {
     /**
      * name space
      */
-    private String  nameSpace;
+    private String nameSpace;
 
     /**
      * the current task status

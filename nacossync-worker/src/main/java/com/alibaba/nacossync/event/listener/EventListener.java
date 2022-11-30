@@ -59,17 +59,17 @@ public class EventListener {
 
     @Subscribe
     public void listenerSyncTaskEvent(SyncTaskEvent syncTaskEvent) {
-
         try {
             long start = System.currentTimeMillis();
+            log.info("接收到同步任务：{}", syncTaskEvent.getTaskDO());
             if (syncManagerService.sync(syncTaskEvent.getTaskDO())) {                
                 skyWalkerCacheServices.addFinishedTask(syncTaskEvent.getTaskDO());
                 metricsManager.record(MetricsStatisticsType.SYNC_TASK_RT, System.currentTimeMillis() - start);
             } else {
-                log.warn("listenerSyncTaskEvent sync failure");
+                log.warn("处理同步失败！listenerSyncTaskEvent sync failure, {}", syncTaskEvent.getTaskDO());
             }                
         } catch (Exception e) {
-            log.warn("listenerSyncTaskEvent process error", e);
+            log.warn("处理同步异常！listenerSyncTaskEvent process error", e);
         }
 
     }

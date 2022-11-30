@@ -76,7 +76,7 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
                 taskDOS.forEach(taskDO -> {
 
                     if ((null != skyWalkerCacheServices.getFinishedTask(taskDO))) {
-
+                        // log.info("该任务已分配同步，跳过！taskDO={}", taskDO);
                         return;
                     }
 

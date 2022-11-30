@@ -106,10 +106,11 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
             NamingService sourceNamingService =
                     nacosServerHolder.get(taskDO.getSourceClusterId());
             ConsulClient consulClient = consulServerHolder.get(taskDO.getDestClusterId());
-
+            log.info("开始处理同步任务，taskDO={}", taskDO);
             nacosListenerMap.putIfAbsent(taskDO.getTaskId(), event -> {
                 if (event instanceof NamingEvent) {
                     try {
+                        log.info("接收到注册中心的事件，taskDO={}，serviceName={}", taskDO, ((NamingEvent) event).getServiceName());
                         Set<String> instanceKeySet = new HashSet<>();
                         List<Instance> sourceInstances = sourceNamingService.getAllInstances(taskDO.getServiceName(),
                                 NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
@@ -144,9 +145,12 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                     }
                 }
             });
-
+            // 先触发一次同步
+            log.info("开始处理同步任务，先触发一次同步，taskDO={}", taskDO);
+            nacosListenerMap.get(taskDO.getTaskId()).onEvent(new NamingEvent(taskDO.getServiceName(), null));
             sourceNamingService.subscribe(taskDO.getServiceName(),
-                    NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), nacosListenerMap.get(taskDO.getTaskId()));
+                    NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()),
+                    nacosListenerMap.get(taskDO.getTaskId()));
         } catch (Exception e) {
             log.error("sync task from nacos to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
