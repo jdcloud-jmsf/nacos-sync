@@ -22,6 +22,7 @@
         <module>nacossync-worker</module>
         <module>nacossync-test</module>
         <module>nacossync-distribution</module>
+        <module>nacossync-jmsf</module>
     </modules>
     <packaging>pom</packaging>
     <properties>
@@ -57,6 +58,7 @@
         <dependency-mediator-maven-plugin.version>1.0.2</dependency-mediator-maven-plugin.version>
         <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
         <async-http-client.version>1.7.17</async-http-client.version>
+        <k8s-client-java.version>16.0.0</k8s-client-java.version>
     </properties>
 
     <scm>
