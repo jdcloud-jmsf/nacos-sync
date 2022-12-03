@@ -36,9 +36,9 @@ public class JmsfAutoConfiguration {
     @Bean
     public SharedIndexInformer<MeshServiceInstance> msiInformer(
             ApiClient apiClient, SharedInformerFactory sharedInformerFactory) {
-        GenericKubernetesApi<MeshServiceInstance, MeshServiceInstanceList> jopClient =
+        GenericKubernetesApi<MeshServiceInstance, MeshServiceInstanceList> msiClient =
                 new GenericKubernetesApi<>(MeshServiceInstance.class, MeshServiceInstanceList.class, "operator.jmsf.jd.com", "v1", "meshserviceinstances", apiClient);
-        return sharedInformerFactory.sharedIndexInformerFor(jopClient, MeshServiceInstance.class, 0, "mesh");
+        return sharedInformerFactory.sharedIndexInformerFor(msiClient, MeshServiceInstance.class, 0, "");
     }
 
     @Bean

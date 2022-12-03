@@ -15,8 +15,8 @@ import java.util.Date;
 @Setter
 public class MeshServiceInstanceStatus {
 
-    private Date createTime;
-    private Date lastTime;
+    private String createTime;
+    private String lastTime;
     private String phase;
     private Object phaseDetail;
     private String proxyType;

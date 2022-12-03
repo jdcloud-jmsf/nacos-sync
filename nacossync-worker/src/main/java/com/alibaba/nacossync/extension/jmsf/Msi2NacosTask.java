@@ -134,6 +134,9 @@ public class Msi2NacosTask {
     }
 
     private void doSync(MeshServiceInstance msi) {
+        if (!isLeader.get()) {
+            return;
+        }
         if (msi.getMetadata().getAnnotations() == null) {
             log.debug("无效的msi: {}，注解为null", msi.getMetadata().getName());
             return;
@@ -197,8 +200,8 @@ public class Msi2NacosTask {
 
             }
         } catch (NacosException e) {
-            e.printStackTrace();
             log.error("服务: {}, 注册中心: {}, 实例查询失败: {}。", msi.getMetadata().getName(), sourceClusterId, e.getCause());
+            return;
         }
         if (needSwitch) {
             try {
