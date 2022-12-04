@@ -166,7 +166,7 @@ public class Msi2NacosTask {
             log.debug("无效的msi: {}，实例ip为空", msi.getMetadata().getName());
             return;
         }
-        boolean msiStatus = !JmsfConstants.HANG_UP_STATUS.equals(msi.getStatus().getPhase());
+        boolean msiStatus = !JmsfConstants.HANG_UP_STATUS.equalsIgnoreCase(msi.getStatus().getPhase());
         String sourceClusterId = msi.getMetadata().getAnnotations().get(JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
         String destClusterId = msi.getMetadata().getAnnotations().get(JmsfConstants.DEST_CLUSTER_ANNOTATION);
         String ip = msi.getSpec().getIp();
