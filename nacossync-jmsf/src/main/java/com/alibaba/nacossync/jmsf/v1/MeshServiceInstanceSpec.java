@@ -2,6 +2,7 @@ package com.alibaba.nacossync.jmsf.v1;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 
 /**
@@ -12,6 +13,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 public class MeshServiceInstanceSpec {
 
     private String accessType;

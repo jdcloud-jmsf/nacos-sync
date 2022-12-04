@@ -5,11 +5,13 @@ import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 @Getter
 @Setter
+@ToString
 public class MeshServiceInstanceList implements KubernetesListObject {
     public static final String SERIALIZED_NAME_API_VERSION = "apiVersion";
     @SerializedName("apiVersion")
