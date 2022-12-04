@@ -141,34 +141,65 @@ public class Msi2NacosTask {
             log.debug("无效的msi: {}，注解为null", msi.getMetadata().getName());
             return;
         }
+
+        if (!msi.getMetadata().getAnnotations().containsKey(JmsfConstants.SYNC_TASK_ID_ANNOTATION)) {
+            log.debug("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.SYNC_TASK_ID_ANNOTATION);
+            return;
+        }
+        String syncTaskId = msi.getMetadata().getAnnotations().get(JmsfConstants.SYNC_TASK_ID_ANNOTATION);
+        if (StringUtils.isEmpty(syncTaskId)) {
+            log.debug("无效的msi: {}，注解值为空: {}", msi.getMetadata().getName(), JmsfConstants.SYNC_TASK_ID_ANNOTATION);
+            return;
+        }
+
         if (!msi.getMetadata().getAnnotations().containsKey(JmsfConstants.DEST_CLUSTER_ANNOTATION)) {
             log.debug("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.DEST_CLUSTER_ANNOTATION);
             return;
         }
+        String destClusterId =  msi.getMetadata().getAnnotations().get(JmsfConstants.DEST_CLUSTER_ANNOTATION);
+        if (StringUtils.isEmpty(destClusterId)) {
+            log.debug("无效的msi: {}，注解值为空: {}", msi.getMetadata().getName(), JmsfConstants.DEST_CLUSTER_ANNOTATION);
+            return;
+        }
+
         if (!msi.getMetadata().getAnnotations().containsKey(JmsfConstants.SOURCE_CLUSTER_ANNOTATION)) {
             log.debug("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
             return;
         }
-        if (msi.getMetadata().getLabels() == null) {
-            log.warn("无效的msi: {}，标签为null", msi.getMetadata().getName());
+        String sourceClusterId = msi.getMetadata().getAnnotations().get(JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
+        if (StringUtils.isEmpty(sourceClusterId)) {
+            log.debug("无效的msi: {}，注解值为空: {}", msi.getMetadata().getName(), JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
             return;
         }
-        if (!msi.getMetadata().getLabels().containsKey(JmsfConstants.REGISTRY_TYPE_LABEL)) {
-            log.debug("无效的msi: {}，标签不存在: {}", msi.getMetadata().getName(), JmsfConstants.REGISTRY_TYPE_LABEL);
+
+        if (!msi.getMetadata().getAnnotations().containsKey(JmsfConstants.SYNC_SOURCE_ANNOTATION)) {
+            log.debug("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.SYNC_SOURCE_ANNOTATION);
             return;
         }
-        if (!msi.getMetadata().getLabels().containsKey(JmsfConstants.INSTANCE_NAME_LABEL)) {
-            log.debug("无效的msi: {}，标签不存在: {}", msi.getMetadata().getName(), JmsfConstants.INSTANCE_NAME_LABEL);
-            return;
-        }
-        String registryType = msi.getMetadata().getLabels().get(JmsfConstants.REGISTRY_TYPE_LABEL);
-        if (!JmsfConstants.NACOS_REGISTRY_TYPE.equals(registryType)) {
+        String syncSource = msi.getMetadata().getAnnotations().get(JmsfConstants.SYNC_SOURCE_ANNOTATION);
+        if (StringUtils.isEmpty(syncSource)) {
             log.debug("无效的msi: {}，实例ip为空", msi.getMetadata().getName());
             return;
         }
-        boolean msiStatus = !JmsfConstants.HANG_UP_STATUS.equalsIgnoreCase(msi.getStatus().getPhase());
-        String sourceClusterId = msi.getMetadata().getAnnotations().get(JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
-        String destClusterId = msi.getMetadata().getAnnotations().get(JmsfConstants.DEST_CLUSTER_ANNOTATION);
+        if (!JmsfConstants.NACOS_SYNC_SOURCE.equals(syncSource)) {
+            log.debug("目前注册中心为: {}，非Nacos注册中心暂不支持同步实例状态。", syncSource);
+            return;
+        }
+        if (msi.getStatus() == null) {
+            log.debug("无效的msi: {}，状态信息不存在。", msi.getMetadata().getName());
+            return;
+        }
+        boolean msiIsEnabled = false;
+        if (JmsfConstants.HANG_UP_STATUS.equalsIgnoreCase(msi.getStatus().getPhase())) {
+            msiIsEnabled = false;
+        }
+        else if (JmsfConstants.ONLINE_STATUS.equalsIgnoreCase(msi.getStatus().getPhase())) {
+            msiIsEnabled = true;
+        } else {
+            log.debug("无效的msi: {}，状态信息未知，不需要处理。", msi.getStatus().getPhase());
+            return;
+        }
+
         String ip = msi.getSpec().getIp();
         if (StringUtils.isEmpty(ip)) {
             log.debug("无效的msi: {}，实例ip为空", msi.getMetadata().getName());
@@ -194,10 +225,9 @@ public class Msi2NacosTask {
                 return;
             }
             ni = optional.get();
-            if (ni.isEnabled() != msiStatus) {
+            if (ni.isEnabled() != msiIsEnabled) {
                 needSwitch = true;
-                ni.setEnabled(msiStatus);
-
+                ni.setEnabled(msiIsEnabled);
             }
         } catch (NacosException e) {
             log.error("服务: {}, 注册中心: {}, 实例查询失败: {}。", msi.getMetadata().getName(), sourceClusterId, e.getCause());
@@ -206,9 +236,9 @@ public class Msi2NacosTask {
         if (needSwitch) {
             try {
                 CatalogInstanceResult state = enhanceNamingService.switchInstanceState(msi.getMetadata().getName(),"DEFAULT_GROUP", ni);
-                log.debug("服务: {}, 注册中心: {}, 动作: {} --> {}, 成功！", msi.getMetadata().getName(), sourceClusterId, !msiStatus, msiStatus);
+                log.debug("服务: {}, 注册中心: {}, 修改实例状态: {} --> {}, 成功！", msi.getMetadata().getName(), sourceClusterId, !msiIsEnabled, msiIsEnabled);
             } catch (NacosException e) {
-                log.error("服务: {}, 注册中心: {}, 动作: {} --> {}, 失败: {}。", msi.getMetadata().getName(), sourceClusterId, !msiStatus, msiStatus, e.getCause());
+                log.error("服务: {}, 注册中心: {}, 修改实例状态: {} --> {}, 失败: {}。", msi.getMetadata().getName(), sourceClusterId, !msiIsEnabled, msiIsEnabled, e.getCause());
             }
 
         }
