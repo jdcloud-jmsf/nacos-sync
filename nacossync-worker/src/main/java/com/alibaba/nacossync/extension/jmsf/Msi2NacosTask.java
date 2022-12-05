@@ -136,6 +136,9 @@ public class Msi2NacosTask {
     }
 
     private void doSync(MeshServiceInstance msi) {
+        if (!System.getenv().containsKey("MSI_ENABLED")) {
+            return;
+        }
         if (!isLeader.get()) {
             return;
         }
