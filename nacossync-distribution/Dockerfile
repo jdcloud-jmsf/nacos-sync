@@ -36,7 +36,6 @@ RUN yum -y install unzip
 
 RUN /bin/bash -c 'for f in /export/servers/*; do if [ ${f##*.} == 'zip' ];then unzip -q -d /export/servers/ $f; fi; done'
 
-RUN tree
 
 RUN rm -f *.zip
 
