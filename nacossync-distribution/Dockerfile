@@ -39,7 +39,7 @@ RUN /bin/bash -c 'for f in /export/servers/*; do if [ ${f##*.} == 'zip' ];then u
 
 RUN rm -f *.zip
 
-RUN yum remove unzip
+RUN yum -y remove unzip
 
 
 VOLUME ["/export/servers/nacos-sync/logs", "/export/servers/nacos-sync/conf"]
