@@ -3,6 +3,8 @@ FROM ${TPAAS_BUILD_IMAGE} as builder
 MAINTAINER Zhiguo.Chen<chenzhiguo@jd.com>
 USER root
 
+WORKDIR /workspace
+
 ENV TZ Asia/Shanghai
 RUN wget --no-check-certificate http://d6.injdk.cn/oraclejdk/8/jdk-8u301-linux-x64.tar.gz  \
     && tar -zxvf jdk-8u301-linux-x64.tar.gz \

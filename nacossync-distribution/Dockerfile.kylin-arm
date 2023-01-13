@@ -8,7 +8,6 @@ ENV TZ Asia/Shanghai
 RUN wget --no-check-certificate http://d6.injdk.cn/oraclejdk/8/jdk-8u301-linux-aarch64.tar.gz  \
     && tar -zxvf jdk-8u301-linux-aarch64.tar.gz -C /usr/local/
 
-
 ENV JAVA_HOME /usr/local/jdk1.8.0_301
 ENV JRE_HOME /usr/local/jdk1.8.0_301/jre
 ENV PATH $JAVA_HOME/bin:$PATH
