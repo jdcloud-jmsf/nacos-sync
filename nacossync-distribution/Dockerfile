@@ -18,7 +18,7 @@ WORKDIR /export/servers/
 
 COPY ./ /export/servers/
 
-RUN mvn package -f ../pom.xml -DskipTests=true package
+RUN mvn --batch-mode clean package -Dmaven.test.skip=true -Pbackend,dist-backend,repo-jd
 
 FROM ${TPAAS_RUNTIME_IMAGE}
 WORKDIR /export/servers/
