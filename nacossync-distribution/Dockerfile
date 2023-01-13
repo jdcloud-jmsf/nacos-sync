@@ -35,7 +35,9 @@ RUN chmod -R 777 /export/servers/*
 RUN yum -y install unzip
 
 RUN /bin/bash -c 'for f in /export/servers/*; do if [ ${f##*.} == 'zip' ];then unzip -q -d /export/servers/ $f; fi; done'
-RUN chmod +x /export/servers/nacos-sync/bin/*.sh
+
+RUN tree
+
 RUN rm -f *.zip
 
 RUN yum -y uninstall unzip
