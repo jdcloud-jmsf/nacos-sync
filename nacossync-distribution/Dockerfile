@@ -31,10 +31,14 @@ ENV JAVA_HOME /usr/local/jdk1.8.0_301
 ENV JRE_HOME /usr/local/jdk1.8.0_301/jre
 ENV PATH $JAVA_HOME/bin:$PATH
 
+RUN yum -y install unzip
 
 RUN /bin/bash -c 'for f in /export/servers/*; do if [ ${f##*.} == 'zip' ];then unzip -q -d /export/servers/ $f; fi; done'
 RUN chmod +x /export/servers/nacos-sync/bin/*.sh
 RUN rm -f *.zip
+
+RUN yum -y uninstall unzip
+
 
 VOLUME ["/export/servers/nacos-sync/logs", "/export/servers/nacos-sync/conf"]
 EXPOSE 8080
