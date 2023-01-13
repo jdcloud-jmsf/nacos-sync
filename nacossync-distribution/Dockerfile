@@ -1,5 +1,8 @@
+ARG TPAAS_BUILD_IMAGE
+ARG TPAAS_RUNTIME_IMAGE
+
 FROM ${TPAAS_BUILD_IMAGE} as builder
-#FROM arm64v8/openjdk:11 # for ARM64
+
 MAINTAINER Zhiguo.Chen<chenzhiguo@jd.com>
 USER root
 
