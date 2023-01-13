@@ -31,6 +31,7 @@ ENV JAVA_HOME /usr/local/jdk1.8.0_301
 ENV JRE_HOME /usr/local/jdk1.8.0_301/jre
 ENV PATH $JAVA_HOME/bin:$PATH
 
+RUN chmod -R 777 /export/servers/*
 RUN yum -y install unzip
 
 RUN /bin/bash -c 'for f in /export/servers/*; do if [ ${f##*.} == 'zip' ];then unzip -q -d /export/servers/ $f; fi; done'
