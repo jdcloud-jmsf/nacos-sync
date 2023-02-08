@@ -5,10 +5,12 @@ import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 
 @Getter
 @Setter
+@ToString
 public class MeshServiceInstance implements KubernetesObject {
     public static final String SERIALIZED_NAME_API_VERSION = "apiVersion";
     @SerializedName("apiVersion")

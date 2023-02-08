@@ -8,12 +8,14 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.jmsf.constant.JmsfConstants;
 import com.alibaba.nacossync.jmsf.v1.MeshServiceInstance;
+import com.google.gson.JsonObject;
 import io.kubernetes.client.extended.leaderelection.LeaderElectionConfig;
 import io.kubernetes.client.extended.leaderelection.LeaderElector;
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock;
@@ -120,7 +122,7 @@ public class Msi2NacosTask {
 
                     @Override
                     public void onUpdate(MeshServiceInstance target, MeshServiceInstance origin) {
-                        log.debug("receive secret update event" + Objects.requireNonNull(target.getMetadata()).getName());
+                        log.info("receive secret update event" + target.toString());
                         doSync(target);
                     }
 
@@ -134,77 +136,87 @@ public class Msi2NacosTask {
     }
 
     private void doSync(MeshServiceInstance msi) {
+        if (!System.getenv().containsKey("MSI_ENABLED")) {
+            return;
+        }
         if (!isLeader.get()) {
             return;
         }
         if (msi.getMetadata().getAnnotations() == null) {
-            log.debug("无效的msi: {}，注解为null", msi.getMetadata().getName());
+            log.info("无效的msi: {}，注解为null", msi.getMetadata().getName());
             return;
         }
 
         if (!msi.getMetadata().getAnnotations().containsKey(JmsfConstants.SYNC_TASK_ID_ANNOTATION)) {
-            log.debug("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.SYNC_TASK_ID_ANNOTATION);
+            log.info("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.SYNC_TASK_ID_ANNOTATION);
             return;
         }
         String syncTaskId = msi.getMetadata().getAnnotations().get(JmsfConstants.SYNC_TASK_ID_ANNOTATION);
         if (StringUtils.isEmpty(syncTaskId)) {
-            log.debug("无效的msi: {}，注解值为空: {}", msi.getMetadata().getName(), JmsfConstants.SYNC_TASK_ID_ANNOTATION);
+            log.info("无效的msi: {}，注解值为空: {}", msi.getMetadata().getName(), JmsfConstants.SYNC_TASK_ID_ANNOTATION);
             return;
         }
 
         if (!msi.getMetadata().getAnnotations().containsKey(JmsfConstants.DEST_CLUSTER_ANNOTATION)) {
-            log.debug("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.DEST_CLUSTER_ANNOTATION);
+            log.info("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.DEST_CLUSTER_ANNOTATION);
             return;
         }
         String destClusterId =  msi.getMetadata().getAnnotations().get(JmsfConstants.DEST_CLUSTER_ANNOTATION);
         if (StringUtils.isEmpty(destClusterId)) {
-            log.debug("无效的msi: {}，注解值为空: {}", msi.getMetadata().getName(), JmsfConstants.DEST_CLUSTER_ANNOTATION);
+            log.info("无效的msi: {}，注解值为空: {}", msi.getMetadata().getName(), JmsfConstants.DEST_CLUSTER_ANNOTATION);
             return;
         }
 
         if (!msi.getMetadata().getAnnotations().containsKey(JmsfConstants.SOURCE_CLUSTER_ANNOTATION)) {
-            log.debug("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
+            log.info("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
             return;
         }
         String sourceClusterId = msi.getMetadata().getAnnotations().get(JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
         if (StringUtils.isEmpty(sourceClusterId)) {
-            log.debug("无效的msi: {}，注解值为空: {}", msi.getMetadata().getName(), JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
+            log.info("无效的msi: {}，注解值为空: {}", msi.getMetadata().getName(), JmsfConstants.SOURCE_CLUSTER_ANNOTATION);
             return;
         }
 
         if (!msi.getMetadata().getAnnotations().containsKey(JmsfConstants.SYNC_SOURCE_ANNOTATION)) {
-            log.debug("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.SYNC_SOURCE_ANNOTATION);
+            log.info("无效的msi: {}，注解不存在: {}", msi.getMetadata().getName(), JmsfConstants.SYNC_SOURCE_ANNOTATION);
             return;
         }
         String syncSource = msi.getMetadata().getAnnotations().get(JmsfConstants.SYNC_SOURCE_ANNOTATION);
         if (StringUtils.isEmpty(syncSource)) {
-            log.debug("无效的msi: {}，实例ip为空", msi.getMetadata().getName());
+            log.info("无效的msi: {}，实例ip为空", msi.getMetadata().getName());
             return;
         }
         if (!JmsfConstants.NACOS_SYNC_SOURCE.equals(syncSource)) {
-            log.debug("目前注册中心为: {}，非Nacos注册中心暂不支持同步实例状态。", syncSource);
+            log.info("目前注册中心为: {}，非Nacos注册中心暂不支持同步实例状态。", syncSource);
             return;
         }
         if (msi.getStatus() == null) {
-            log.debug("无效的msi: {}，状态信息不存在。", msi.getMetadata().getName());
+            log.info("无效的msi: {}，状态信息不存在。", msi.getMetadata().getName());
             return;
         }
         boolean msiIsEnabled = false;
-        if (JmsfConstants.HANG_UP_STATUS.equalsIgnoreCase(msi.getStatus().getPhase())) {
+        if (JmsfConstants.HANG_UP_SYNC_STATUS.equalsIgnoreCase(msi.getStatus().getPhase())) {
             msiIsEnabled = false;
         }
         else if (JmsfConstants.ONLINE_STATUS.equalsIgnoreCase(msi.getStatus().getPhase())) {
             msiIsEnabled = true;
         } else {
-            log.debug("无效的msi: {}，状态信息未知，不需要处理。", msi.getStatus().getPhase());
+            log.info("无效的msi: {}，状态信息未知，不需要处理。", msi.getStatus().getPhase());
             return;
         }
 
         String ip = msi.getSpec().getIp();
         if (StringUtils.isEmpty(ip)) {
-            log.debug("无效的msi: {}，实例ip为空", msi.getMetadata().getName());
+            log.info("无效的msi: {}，实例ip为空", msi.getMetadata().getName());
             return;
         }
+
+        String serviceName = msi.getSpec().getServiceName();
+        if (StringUtils.isEmpty(serviceName)) {
+            log.info("无效的msi: {}，服务名为空", msi.getMetadata().getName());
+            return;
+        }
+
         NamingService sourceNamingService = nacosServerHolder.get(sourceClusterId);
         if (sourceNamingService == null) {
             log.error("only support sync type that the source of the Nacos.");
@@ -215,13 +227,17 @@ public class Msi2NacosTask {
         final Msi2NacosTask.EnhanceNamingService enhanceNamingService = new Msi2NacosTask.EnhanceNamingService(sourceNamingService);
         // TODO group?
         try {
-            CatalogInstanceResult result = enhanceNamingService.catalogInstances(msi.getMetadata().getName(), "DEFAULT_GROUP");
+            CatalogInstanceResult result = enhanceNamingService.catalogInstances(serviceName, "DEFAULT_GROUP");
+            if (result == null) {
+                log.info("实例不需要同步，注册中心: {}，未查到服务实例: {}", sourceClusterId, serviceName);
+                return;
+            }
             if (result.count == 0) {
                 return;
             }
-            Optional<Instance> optional = result.instanceList.stream().filter(i -> i.getIp().equals(ip)).findFirst();
+            Optional<Instance> optional = result.list.stream().filter(i -> i.getIp().equals(ip)).findFirst();
             if (!optional.isPresent()) {
-                log.debug("服务: {}, 注册中心: {}, 未找到实例: {}", msi.getMetadata().getName(), sourceClusterId, ip);
+                log.info("服务: {}, 注册中心: {}, 未找到实例: {}", msi.getMetadata().getName(), sourceClusterId, ip);
                 return;
             }
             ni = optional.get();
@@ -230,19 +246,17 @@ public class Msi2NacosTask {
                 ni.setEnabled(msiIsEnabled);
             }
         } catch (NacosException e) {
-            log.error("服务: {}, 注册中心: {}, 实例查询失败: {}。", msi.getMetadata().getName(), sourceClusterId, e.getCause());
+            log.info("服务: {}, 注册中心: {}, 实例查询失败: {}。", msi.getMetadata().getName(), sourceClusterId, ExceptionUtil.getStackTrace(e));
             return;
         }
         if (needSwitch) {
             try {
-                CatalogInstanceResult state = enhanceNamingService.switchInstanceState(msi.getMetadata().getName(),"DEFAULT_GROUP", ni);
-                log.debug("服务: {}, 注册中心: {}, 修改实例状态: {} --> {}, 成功！", msi.getMetadata().getName(), sourceClusterId, !msiIsEnabled, msiIsEnabled);
+                String result = enhanceNamingService.switchInstanceState(serviceName,"DEFAULT_GROUP", ni);
+                log.info("服务: {}, 注册中心: {}, 修改实例状态: {} --> {}, {}！", msi.getMetadata().getName(), sourceClusterId, !msiIsEnabled, msiIsEnabled, result);
             } catch (NacosException e) {
-                log.error("服务: {}, 注册中心: {}, 修改实例状态: {} --> {}, 失败: {}。", msi.getMetadata().getName(), sourceClusterId, !msiIsEnabled, msiIsEnabled, e.getCause());
+                log.error("服务: {}, 注册中心: {}, 修改实例状态: {} --> {}, 失败: {}。", msi.getMetadata().getName(), sourceClusterId, !msiIsEnabled, msiIsEnabled, ExceptionUtil.getStackTrace(e));
             }
-
         }
-
     }
 
     @PreDestroy
@@ -285,9 +299,9 @@ public class Msi2NacosTask {
             params.put(PAGE_NO, String.valueOf(1));
             params.put(PAGE_SIZE, String.valueOf(100));
 
-
             final String result = this.serverProxy.reqApi(UtilAndComs.nacosUrlBase + "/catalog/instances", params,
                     HttpMethod.GET);
+            log.info("注册中心实例查询结果:{}", result);
             if (StringUtils.isNotEmpty(result)) {
                 return JacksonUtils.toObj(result, Msi2NacosTask.CatalogInstanceResult.class);
             }
@@ -297,7 +311,7 @@ public class Msi2NacosTask {
         /**
          * 更新实例状态
          */
-        public Msi2NacosTask.CatalogInstanceResult switchInstanceState(@Nullable String serviceName, @Nullable String group, Instance instance) throws NacosException {
+        public String switchInstanceState(@Nullable String serviceName, @Nullable String group, Instance instance) throws NacosException {
             Map<String, String> params = new HashMap<>(8);
             params.put(CommonParams.NAMESPACE_ID, serverProxy.getNamespaceId());
             params.put(CommonParams.SERVICE_NAME, serviceName);
@@ -319,7 +333,7 @@ public class Msi2NacosTask {
             final String result = this.serverProxy.reqApi(UtilAndComs.nacosUrlInstance, params, body,
                     HttpMethod.PUT);
             if (StringUtils.isNotEmpty(result)) {
-                return JacksonUtils.toObj(result, Msi2NacosTask.CatalogInstanceResult.class);
+                return result;
             }
             return null;
         }
@@ -334,7 +348,7 @@ public class Msi2NacosTask {
          */
         private int count;
 
-        private List<Instance> instanceList;
+        private List<Instance> list;
 
     }
 

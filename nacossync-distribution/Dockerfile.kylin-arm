@@ -1,17 +1,16 @@
 ARG TPAAS_BUILD_IMAGE
 ARG TPAAS_RUNTIME_IMAGE
 
-FROM ${TPAAS_BUILD_IMAGE} as builder
 
+FROM ${TPAAS_BUILD_IMAGE} as builder
+#FROM arm64v8/openjdk:11 # for ARM64
 MAINTAINER Zhiguo.Chen<chenzhiguo@jd.com>
 USER root
 
-WORKDIR /workspace
-
 ENV TZ Asia/Shanghai
-RUN wget --no-check-certificate http://d6.injdk.cn/oraclejdk/8/jdk-8u301-linux-x64.tar.gz  \
-    && tar -zxvf jdk-8u301-linux-x64.tar.gz \
-    && cp -r /workspace/jdk1.8.0_301 /usr/local/
+
+RUN wget --no-check-certificate http://d6.injdk.cn/oraclejdk/8/jdk-8u301-linux-aarch64.tar.gz  \
+    && tar -zxvf jdk-8u301-linux-aarch64.tar.gz -C /usr/local/
 
 ENV JAVA_HOME /usr/local/jdk1.8.0_301
 ENV JRE_HOME /usr/local/jdk1.8.0_301/jre
@@ -38,7 +37,6 @@ RUN chmod -R 777 /export/servers/*
 RUN yum -y install unzip
 
 RUN /bin/bash -c 'for f in /export/servers/*; do if [ ${f##*.} == 'zip' ];then unzip -q -d /export/servers/ $f; fi; done'
-
 
 RUN rm -f *.zip
 
