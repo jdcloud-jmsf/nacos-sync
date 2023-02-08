@@ -23,4 +23,8 @@ public class JmsfConstants {
     public final static String ONLINE_STATUS = "Online";
     public final static String HANG_UP_STATUS = "HangUp";
 
+    /**
+     * Metadata
+     */
+    public final static String CLUSTER_LEADER = "cluster_leader";
 }

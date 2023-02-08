@@ -19,6 +19,7 @@ package com.alibaba.nacossync.timer;
 import com.alibaba.nacossync.cache.SkyWalkerCacheServices;
 import com.alibaba.nacossync.constant.MetricsStatisticsType;
 import com.alibaba.nacossync.constant.TaskStatusEnum;
+import com.alibaba.nacossync.dao.MetadataAccessService;
 import com.alibaba.nacossync.dao.TaskAccessService;
 import com.alibaba.nacossync.event.DeleteTaskEvent;
 import com.alibaba.nacossync.event.SyncTaskEvent;
@@ -55,6 +56,9 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
     @Autowired
     private ScheduledExecutorService scheduledExecutorService;
 
+    @Autowired
+    private MetadataAccessService metadataAccessService;
+
     @Override
     public void run(String... args) {
         /** Fetch the task list from the database every 3 seconds */
@@ -70,6 +74,21 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
 
             Long start = System.currentTimeMillis();
             try {
+                // MetadataDO metadataDO = metadataAccessService.getMetadataByKey(JmsfConstants.CLUSTER_LEADER);
+                // if (Objects.isNull(metadataDO)) {
+                //     metadataDO = new MetadataDO();
+                //     metadataDO.setMetaKey(JmsfConstants.CLUSTER_LEADER);
+                //     metadataDO.setMetaValue(SkyWalkerUtil.getLocalIp());
+                //     metadataDO.setVersion(MD5Utils.encodeHexString(metadataDO.getMetaValue().getBytes(StandardCharsets.UTF_8)));
+                //     metadataDO.setExpirationTime(System.currentTimeMillis() + 10000);
+                //     metadataAccessService.saveMetadataByKey(metadataDO);
+                // }else if (Objects.isNull(metadataDO.getExpirationTime()) || metadataDO.getExpirationTime() < System.currentTimeMillis()
+                //         || SkyWalkerUtil.getLocalIp().equals(metadataDO.getMetaValue())) {
+                //     metadataDO.setMetaValue(SkyWalkerUtil.getLocalIp());
+                //     metadataDO.setVersion(MD5Utils.encodeHexString(metadataDO.getMetaValue().getBytes(StandardCharsets.UTF_8)));
+                //     metadataDO.setExpirationTime(System.currentTimeMillis() + 10000);
+                //     metadataAccessService.saveMetadataByKey(metadataDO);
+                // }
 
                 Iterable<TaskDO> taskDOS = taskAccessService.findAll();
 

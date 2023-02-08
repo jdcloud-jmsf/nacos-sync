@@ -28,6 +28,7 @@ import com.alibaba.nacossync.monitor.MetricsManager;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.util.ConsulUtils;
 import com.alibaba.nacossync.util.NacosUtils;
+import com.alibaba.nacossync.util.StringUtils;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
@@ -134,6 +135,9 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
     private void overrideAllInstance(TaskDO taskDO, NamingService destNamingService,
                                      List<HealthService> healthServiceList, Set<String> instanceKeys) throws NacosException {
         for (HealthService healthService : healthServiceList) {
+            if (StringUtils.isEmpty(healthService.getService().getAddress())) {
+                continue;
+            }
             if (needSync(ConsulUtils.transferMetadata(healthService.getService().getTags()))) {
                 destNamingService.registerInstance(taskDO.getServiceName(),
                         NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()),

@@ -14,17 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacossync.pojo;
+package com.alibaba.nacossync.pojo.model;
 
 import lombok.Data;
 
+import javax.persistence.*;
+import java.io.Serializable;
+
 /**
- * @author NacosSync
- * @version $Id: QueryCondition.java, v 0.1 2018年11月06日 AM11:03 NacosSync Exp $
+ * Metadata DO
+ *
+ * @author Zhiguo.Chen
+ * @since 20230118
  */
 @Data
-public class QueryCondition {
-    private Integer id;
-    private String serviceName;
-    private String clusterName;
+@Entity
+@Table(name = "metadata")
+public class MetadataDO implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private String metaKey;
+
+    private String metaValue;
+
+    private String version;
+
+    private Long expirationTime;
+
 }

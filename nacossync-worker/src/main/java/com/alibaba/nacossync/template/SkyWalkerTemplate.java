@@ -16,12 +16,10 @@
  */
 package com.alibaba.nacossync.template;
 
-import com.alibaba.nacossync.monitor.MetricsManager;
-import lombok.extern.slf4j.Slf4j;
-
 import com.alibaba.nacossync.exception.SkyWalkerException;
-import com.alibaba.nacossync.pojo.result.BaseResult;
 import com.alibaba.nacossync.pojo.request.BaseRequest;
+import com.alibaba.nacossync.pojo.result.BaseResult;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author NacosSync
@@ -30,21 +28,17 @@ import com.alibaba.nacossync.pojo.request.BaseRequest;
 @Slf4j
 public class SkyWalkerTemplate {
 
-    public static <T extends BaseResult> T run(Processor processor, BaseRequest request, T result,
-                                               Object... others) {
-
+    public static <T extends BaseResult> T run(Processor processor, BaseRequest request, T result, Object... others) {
         try {
             processor.process(request, result, others);
         } catch (Throwable e) {
-
             log.error("processor.process error", e);
             initExceptionResult(result, e);
         }
-
         return result;
     }
 
-    private static <T extends BaseResult> void initExceptionResult(T result, Throwable e) {
+    public static <T extends BaseResult> void initExceptionResult(T result, Throwable e) {
         if (e instanceof SkyWalkerException) {
             SkyWalkerException skyWalkerException = (SkyWalkerException) e;
             if (null != skyWalkerException.getResultCode()) {

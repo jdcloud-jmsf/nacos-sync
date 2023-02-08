@@ -16,32 +16,29 @@
  */
 package com.alibaba.nacossync.dao.repository;
 
-import java.util.List;
-
-import javax.transaction.Transactional;
-
+import com.alibaba.nacossync.pojo.model.ClusterTaskDO;
+import com.alibaba.nacossync.pojo.model.TaskDO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.CrudRepository;
 
-import com.alibaba.nacossync.pojo.model.TaskDO;
+import javax.transaction.Transactional;
+import java.util.List;
 
 /**
- * @author NacosSync
- * @version $Id: TaskRepository.java, v 0.1 2018-09-25 AM12:04 NacosSync Exp $$
+ * ClusterTaskRepository
+ *
+ * @author Zhiguo.Chen
+ * @since 20230118
  */
-public interface TaskRepository extends CrudRepository<TaskDO, Integer>, JpaRepository<TaskDO, Integer>,
-        JpaSpecificationExecutor<TaskDO> {
+public interface ClusterTaskRepository extends CrudRepository<ClusterTaskDO, Integer>, JpaRepository<ClusterTaskDO, Integer>,
+        JpaSpecificationExecutor<ClusterTaskDO> {
 
-    TaskDO findByTaskId(String taskId);
+    ClusterTaskDO findByClusterTaskId(String taskId);
 
     @Transactional
-    int deleteByTaskId(String taskId);
+    int deleteByClusterTaskId(String taskId);
     
-    List<TaskDO> findAllByTaskIdIn(List<String> taskIds);
-    
-    List<TaskDO> getAllByWorkerIp(String workerIp);
-
-    List<TaskDO> findAllByClusterTaskId(String clusterTaskId);
+    List<ClusterTaskDO> findAllByClusterTaskIdIn(List<String> taskIds);
 
 }

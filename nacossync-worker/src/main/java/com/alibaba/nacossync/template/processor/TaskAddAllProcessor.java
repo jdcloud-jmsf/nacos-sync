@@ -26,19 +26,27 @@ import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacossync.constant.ClusterTypeEnum;
 import com.alibaba.nacossync.constant.TaskStatusEnum;
 import com.alibaba.nacossync.dao.ClusterAccessService;
+import com.alibaba.nacossync.dao.ClusterTaskAccessService;
 import com.alibaba.nacossync.dao.TaskAccessService;
 import com.alibaba.nacossync.exception.SkyWalkerException;
 import com.alibaba.nacossync.extension.SyncManagerService;
+import com.alibaba.nacossync.extension.holder.ConsulServerHolder;
 import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.pojo.model.ClusterDO;
+import com.alibaba.nacossync.pojo.model.ClusterTaskDO;
 import com.alibaba.nacossync.pojo.model.TaskDO;
+import com.alibaba.nacossync.pojo.request.ClusterTaskAddRequest;
 import com.alibaba.nacossync.pojo.request.TaskAddAllRequest;
 import com.alibaba.nacossync.pojo.request.TaskAddRequest;
 import com.alibaba.nacossync.pojo.result.TaskAddResult;
 import com.alibaba.nacossync.template.Processor;
 import com.alibaba.nacossync.util.SkyWalkerUtil;
+import com.ecwid.consul.v1.ConsulClient;
+import com.ecwid.consul.v1.Response;
+import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -63,68 +71,125 @@ import static com.alibaba.nacossync.constant.SkyWalkerConstants.SERVICE_NAME_PAR
 @Slf4j
 @Service
 public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAddResult> {
-    
+
     private static final String CONSUMER_PREFIX = "consumers:";
-    
+
     private final NacosServerHolder nacosServerHolder;
-    
+
     private final SyncManagerService syncManagerService;
-    
+
     private final TaskAccessService taskAccessService;
-    
+
     private final ClusterAccessService clusterAccessService;
-    
+
+    private final ClusterTaskAccessService clusterTaskAccessService;
+
+    private final ConsulServerHolder consulServerHolder;
+
     public TaskAddAllProcessor(NacosServerHolder nacosServerHolder, SyncManagerService syncManagerService,
-            TaskAccessService taskAccessService, ClusterAccessService clusterAccessService) {
+                               TaskAccessService taskAccessService, ClusterAccessService clusterAccessService,
+                               ClusterTaskAccessService clusterTaskAccessService, ConsulServerHolder consulServerHolder) {
         this.nacosServerHolder = nacosServerHolder;
         this.syncManagerService = syncManagerService;
         this.taskAccessService = taskAccessService;
         this.clusterAccessService = clusterAccessService;
+        this.clusterTaskAccessService = clusterTaskAccessService;
+        this.consulServerHolder = consulServerHolder;
     }
-    
+
     @Override
     public void process(TaskAddAllRequest addAllRequest, TaskAddResult taskAddResult, Object... others)
             throws Exception {
-        
+
         ClusterDO destCluster = clusterAccessService.findByClusterId(addAllRequest.getDestClusterId());
-        
+
         ClusterDO sourceCluster = clusterAccessService.findByClusterId(addAllRequest.getSourceClusterId());
-        
+
         if (Objects.isNull(destCluster) || Objects.isNull(sourceCluster)) {
             throw new SkyWalkerException("Please check if the source or target cluster exists.");
         }
-        
+
         if (Objects.isNull(syncManagerService.getSyncService(sourceCluster.getClusterId(), destCluster.getClusterId()))) {
             throw new SkyWalkerException("current sync type not supported.");
         }
-        // TODO 目前仅支持 Nacos 为源的同步类型，待完善更多类型支持。
-        final NamingService sourceNamingService = nacosServerHolder.get(sourceCluster.getClusterId());
-        if (sourceNamingService == null) {
-            throw new SkyWalkerException("only support sync type that the source of the Nacos.");
-        }
-        
-        final EnhanceNamingService enhanceNamingService = new EnhanceNamingService(sourceNamingService);
-        final CatalogServiceResult catalogServiceResult = enhanceNamingService.catalogServices(null, null);
-        if (catalogServiceResult == null || catalogServiceResult.getCount() <= 0) {
-            throw new SkyWalkerException("sourceCluster data empty");
-        }
-        
-        for (ServiceView serviceView : catalogServiceResult.getServiceList()) {
-            // exclude subscriber
-            if (addAllRequest.isExcludeConsumer() && serviceView.getName().startsWith(CONSUMER_PREFIX)) {
-                continue;
-            }
-            TaskAddRequest taskAddRequest = new TaskAddRequest();
-            taskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
-            taskAddRequest.setDestClusterId(destCluster.getClusterId());
-            taskAddRequest.setServiceName(serviceView.getName());
-            taskAddRequest.setGroupName(serviceView.getGroupName());
-            this.dealTask(addAllRequest, taskAddRequest);
+
+        ClusterTaskAddRequest clusterTaskAddRequest = new ClusterTaskAddRequest();
+        clusterTaskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
+        clusterTaskAddRequest.setDestClusterId(destCluster.getClusterId());
+        this.dealClusterTask(addAllRequest, clusterTaskAddRequest);
+
+        switch (ClusterTypeEnum.valueOf(sourceCluster.getClusterType())) {
+            case NACOS:
+                final NamingService sourceNamingService = nacosServerHolder.get(sourceCluster.getClusterId());
+                if (sourceNamingService == null) {
+                    throw new SkyWalkerException("The cluster was not found.");
+                }
+
+                final EnhanceNamingService enhanceNamingService = new EnhanceNamingService(sourceNamingService);
+                final CatalogServiceResult catalogServiceResult = enhanceNamingService.catalogServices(null, null);
+                if (catalogServiceResult == null || catalogServiceResult.getCount() <= 0) {
+                    throw new SkyWalkerException("sourceCluster data empty");
+                }
+
+                for (ServiceView serviceView : catalogServiceResult.getServiceList()) {
+                    // exclude subscriber
+                    if (addAllRequest.isExcludeConsumer() && serviceView.getName().startsWith(CONSUMER_PREFIX)) {
+                        continue;
+                    }
+                    TaskAddRequest taskAddRequest = new TaskAddRequest();
+                    taskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
+                    taskAddRequest.setDestClusterId(destCluster.getClusterId());
+                    taskAddRequest.setServiceName(serviceView.getName());
+                    taskAddRequest.setGroupName(serviceView.getGroupName());
+                    this.dealTask(addAllRequest, taskAddRequest);
+                }
+            case CONSUL:
+                ConsulClient consulClient = consulServerHolder.get(sourceCluster.getClusterId());
+                if (consulClient == null) {
+                    throw new SkyWalkerException("The cluster was not found.");
+                }
+                CatalogServicesRequest request = CatalogServicesRequest.newBuilder().setToken(sourceCluster.getPassword()).build();
+                Response<Map<String, List<String>>> services = consulClient.getCatalogServices(request);
+                if (Objects.nonNull(services) && Objects.nonNull(services.getValue())) {
+                    services.getValue().forEach((s, service) -> {
+                        // Skip consul service
+                        if ("consul".equalsIgnoreCase(s)) {
+                            return;
+                        }
+                        TaskAddRequest taskAddRequest = new TaskAddRequest();
+                        taskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
+                        taskAddRequest.setDestClusterId(destCluster.getClusterId());
+                        taskAddRequest.setServiceName(s);
+                        // taskAddRequest.setGroupName(serviceView.getGroupName());
+                        try {
+                            this.dealTask(addAllRequest, taskAddRequest);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
         }
     }
-    
+
+    private void dealClusterTask(TaskAddAllRequest addAllRequest, ClusterTaskAddRequest clusterTaskAddRequest) throws Exception {
+        String clusterTaskId = SkyWalkerUtil.generateClusterTaskId(clusterTaskAddRequest);
+        ClusterTaskDO taskDO = clusterTaskAccessService.findByTaskId(clusterTaskId);
+        if (null == taskDO) {
+            taskDO = new ClusterTaskDO();
+            taskDO.setClusterTaskId(clusterTaskId);
+            taskDO.setDestClusterId(addAllRequest.getDestClusterId());
+            taskDO.setSourceClusterId(addAllRequest.getSourceClusterId());
+            taskDO.setVersion(clusterTaskAddRequest.getVersion());
+            taskDO.setNameSpace(clusterTaskAddRequest.getNameSpace());
+            taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
+        } else {
+            taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
+        }
+        clusterTaskAccessService.addTask(taskDO);
+    }
+
     private void dealTask(TaskAddAllRequest addAllRequest, TaskAddRequest taskAddRequest) throws Exception {
-        
+
         String taskId = SkyWalkerUtil.generateTaskId(taskAddRequest);
         TaskDO taskDO = taskAccessService.findByTaskId(taskId);
         if (null == taskDO) {
@@ -139,61 +204,61 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
             taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
             taskDO.setWorkerIp(SkyWalkerUtil.getLocalIp());
             taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
-            
+            taskDO.setClusterTaskId(SkyWalkerUtil.generateClusterTaskId(taskAddRequest));
         } else {
             taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
             taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
         }
         taskAccessService.addTask(taskDO);
     }
-    
+
     static class EnhanceNamingService {
-        
+
         protected NamingService delegate;
-        
+
         protected NamingProxy serverProxy;
-        
+
         protected EnhanceNamingService(NamingService namingService) {
             if (!(namingService instanceof NacosNamingService)) {
                 throw new IllegalArgumentException(
                         "namingService only support instance of com.alibaba.nacos.client.naming.NacosNamingService.");
             }
             this.delegate = namingService;
-            
+
             // serverProxy
             final Field serverProxyField = ReflectionUtils.findField(NacosNamingService.class, "serverProxy");
             assert serverProxyField != null;
             ReflectionUtils.makeAccessible(serverProxyField);
             this.serverProxy = (NamingProxy) ReflectionUtils.getField(serverProxyField, delegate);
         }
-        
+
         public CatalogServiceResult catalogServices(@Nullable String serviceName, @Nullable String group)
                 throws NacosException {
             int pageNo = 1; // start with 1
             int pageSize = 100;
-            
+
             final CatalogServiceResult result = catalogServices(serviceName, group, pageNo, pageSize);
-            
+
             CatalogServiceResult tmpResult = result;
-            
+
             while (Objects.nonNull(tmpResult) && tmpResult.serviceList.size() >= pageSize) {
                 pageNo++;
                 tmpResult = catalogServices(serviceName, group, pageNo, pageSize);
-                
+
                 if (tmpResult != null) {
                     result.serviceList.addAll(tmpResult.serviceList);
                 }
             }
-            
+
             return result;
         }
-        
+
         /**
          * @see com.alibaba.nacos.client.naming.core.HostReactor#getServiceInfoDirectlyFromServer(String, String)
          */
         public CatalogServiceResult catalogServices(@Nullable String serviceName, @Nullable String group, int pageNo,
-                int pageSize) throws NacosException {
-            
+                                                    int pageSize) throws NacosException {
+
             // pageNo
             // pageSize
             // serviceNameParam
@@ -204,7 +269,7 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
             params.put(GROUP_NAME_PARAM, group);
             params.put(PAGE_NO, String.valueOf(pageNo));
             params.put(PAGE_SIZE, String.valueOf(pageSize));
-            
+
             final String result = this.serverProxy.reqApi(UtilAndComs.nacosUrlBase + "/catalog/services", params,
                     HttpMethod.GET);
             if (StringUtils.isNotEmpty(result)) {
@@ -212,39 +277,39 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
             }
             return null;
         }
-        
+
     }
-    
+
     /**
      * Copy from Nacos Server.
      */
     @Data
     static class ServiceView {
-        
+
         private String name;
-        
+
         private String groupName;
-        
+
         private int clusterCount;
-        
+
         private int ipCount;
-        
+
         private int healthyInstanceCount;
-        
+
         private String triggerFlag;
-        
+
     }
-    
+
     @Data
     static class CatalogServiceResult {
-        
+
         /**
          * count，not equal serviceList.size .
          */
         private int count;
-        
+
         private List<ServiceView> serviceList;
-        
+
     }
-    
+
 }

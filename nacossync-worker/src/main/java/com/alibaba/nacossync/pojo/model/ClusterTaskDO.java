@@ -18,13 +18,15 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 /**
- * @author NacosSync
- * @version $Id: TaskDo.java, v 0.1 2018-09-24 PM11:53 NacosSync Exp $$
+ * ClusterTask DO
+ *
+ * @author Zhiguo.Chen
+ * @since 20230118
  */
 @Data
 @Entity
-@Table(name = "task")
-public class TaskDO implements Serializable {
+@Table(name = "cluster_task")
+public class ClusterTaskDO implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +34,7 @@ public class TaskDO implements Serializable {
     /**
      * custom task id(unique)
      */
-    private String taskId;
+    private String clusterTaskId;
     /**
      * source cluster id
      */
@@ -41,10 +43,6 @@ public class TaskDO implements Serializable {
      * destination cluster id
      */
     private String destClusterId;
-    /**
-     * service name
-     */
-    private String serviceName;
     /**
      * version
      */
@@ -57,19 +55,8 @@ public class TaskDO implements Serializable {
      * name space
      */
     private String nameSpace;
-
     /**
      * the current task status
      */
     private String taskStatus;
-    /**
-     * The IP address that performs the current task
-     */
-    private String workerIp;
-    /**
-     * operation id,The operation id follow when the task status changes
-     */
-    private String operationId;
-
-    private String clusterTaskId;
 }

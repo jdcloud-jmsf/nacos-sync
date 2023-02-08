@@ -20,6 +20,7 @@ import com.alibaba.nacossync.constant.ClusterTypeEnum;
 import com.alibaba.nacossync.constant.SkyWalkerConstants;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.pojo.request.ClusterAddRequest;
+import com.alibaba.nacossync.pojo.request.ClusterTaskAddRequest;
 import com.alibaba.nacossync.pojo.request.TaskAddRequest;
 import com.google.common.base.Joiner;
 
@@ -96,6 +97,20 @@ public class SkyWalkerUtil {
         sb.append(SkyWalkerConstants.UNDERLINE);
         sb.append(destClusterId);
         return SkyWalkerUtil.StringToMd5(sb.toString());
+    }
+
+    public static String generateClusterTaskId(ClusterTaskAddRequest addTaskRequest){
+        String sb = addTaskRequest.getSourceClusterId() +
+                SkyWalkerConstants.UNDERLINE +
+                addTaskRequest.getDestClusterId();
+        return SkyWalkerUtil.StringToMd5(sb);
+    }
+
+    public static String generateClusterTaskId(TaskAddRequest addTaskRequest){
+        String sb = addTaskRequest.getSourceClusterId() +
+                SkyWalkerConstants.UNDERLINE +
+                addTaskRequest.getDestClusterId();
+        return SkyWalkerUtil.StringToMd5(sb);
     }
 
     /**

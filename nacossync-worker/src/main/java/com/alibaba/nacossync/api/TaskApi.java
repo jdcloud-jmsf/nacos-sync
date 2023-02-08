@@ -13,17 +13,18 @@
 
 package com.alibaba.nacossync.api;
 
-import com.alibaba.nacossync.pojo.request.TaskAddAllRequest;
-import com.alibaba.nacossync.pojo.request.TaskAddRequest;
-import com.alibaba.nacossync.pojo.request.TaskDeleteInBatchRequest;
-import com.alibaba.nacossync.pojo.request.TaskDeleteRequest;
-import com.alibaba.nacossync.pojo.request.TaskDetailQueryRequest;
-import com.alibaba.nacossync.pojo.request.TaskListQueryRequest;
-import com.alibaba.nacossync.pojo.request.TaskUpdateRequest;
-import com.alibaba.nacossync.pojo.result.BaseResult;
-import com.alibaba.nacossync.pojo.result.TaskAddResult;
-import com.alibaba.nacossync.pojo.result.TaskDetailQueryResult;
-import com.alibaba.nacossync.pojo.result.TaskListQueryResult;
+import com.alibaba.nacossync.constant.TaskStatusEnum;
+import com.alibaba.nacossync.dao.ClusterAccessService;
+import com.alibaba.nacossync.dao.ClusterTaskAccessService;
+import com.alibaba.nacossync.dao.TaskAccessService;
+import com.alibaba.nacossync.exception.SkyWalkerException;
+import com.alibaba.nacossync.pojo.QueryCondition;
+import com.alibaba.nacossync.pojo.model.ClusterTaskDO;
+import com.alibaba.nacossync.pojo.model.TaskDO;
+import com.alibaba.nacossync.pojo.request.*;
+import com.alibaba.nacossync.pojo.result.*;
+import com.alibaba.nacossync.pojo.view.ClusterTaskModel;
+import com.alibaba.nacossync.pojo.view.TaskModel;
 import com.alibaba.nacossync.template.SkyWalkerTemplate;
 import com.alibaba.nacossync.template.processor.TaskAddAllProcessor;
 import com.alibaba.nacossync.template.processor.TaskAddProcessor;
@@ -33,10 +34,16 @@ import com.alibaba.nacossync.template.processor.TaskDetailProcessor;
 import com.alibaba.nacossync.template.processor.TaskListQueryProcessor;
 import com.alibaba.nacossync.template.processor.TaskUpdateProcessor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * @author NacosSync
@@ -45,25 +52,29 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 public class TaskApi {
-    
+
     private final TaskUpdateProcessor taskUpdateProcessor;
-    
+
     private final TaskAddProcessor taskAddProcessor;
-    
+
     private final TaskAddAllProcessor taskAddAllProcessor;
-    
+
     private final TaskDeleteProcessor taskDeleteProcessor;
-    
+
     private final TaskDeleteInBatchProcessor taskDeleteInBatchProcessor;
-    
+
     private final TaskListQueryProcessor taskListQueryProcessor;
-    
+
     private final TaskDetailProcessor taskDetailProcessor;
-    
+
+    private final TaskAccessService taskAccessService;
+
+    private final ClusterTaskAccessService clusterTaskAccessService;
+
     public TaskApi(TaskUpdateProcessor taskUpdateProcessor, TaskAddProcessor taskAddProcessor,
-            TaskAddAllProcessor taskAddAllProcessor, TaskDeleteProcessor taskDeleteProcessor,
-            TaskDeleteInBatchProcessor taskDeleteInBatchProcessor, TaskListQueryProcessor taskListQueryProcessor,
-            TaskDetailProcessor taskDetailProcessor) {
+                   TaskAddAllProcessor taskAddAllProcessor, TaskDeleteProcessor taskDeleteProcessor,
+                   TaskDeleteInBatchProcessor taskDeleteInBatchProcessor, TaskListQueryProcessor taskListQueryProcessor,
+                   TaskDetailProcessor taskDetailProcessor, TaskAccessService taskAccessService, ClusterTaskAccessService clusterTaskAccessService) {
         this.taskUpdateProcessor = taskUpdateProcessor;
         this.taskAddProcessor = taskAddProcessor;
         this.taskAddAllProcessor = taskAddAllProcessor;
@@ -71,26 +82,28 @@ public class TaskApi {
         this.taskDeleteInBatchProcessor = taskDeleteInBatchProcessor;
         this.taskListQueryProcessor = taskListQueryProcessor;
         this.taskDetailProcessor = taskDetailProcessor;
+        this.taskAccessService = taskAccessService;
+        this.clusterTaskAccessService = clusterTaskAccessService;
     }
-    
+
     @RequestMapping(path = "/v1/task/list", method = RequestMethod.GET)
     public TaskListQueryResult tasks(TaskListQueryRequest taskListQueryRequest) {
-        
+
         return SkyWalkerTemplate.run(taskListQueryProcessor, taskListQueryRequest, new TaskListQueryResult());
     }
-    
+
     @RequestMapping(path = "/v1/task/detail", method = RequestMethod.GET)
     public TaskDetailQueryResult getByTaskId(TaskDetailQueryRequest taskDetailQueryRequest) {
-        
+
         return SkyWalkerTemplate.run(taskDetailProcessor, taskDetailQueryRequest, new TaskDetailQueryResult());
     }
-    
+
     @RequestMapping(path = "/v1/task/delete", method = RequestMethod.DELETE)
     public BaseResult deleteTask(TaskDeleteRequest taskDeleteRequest) {
-        
+
         return SkyWalkerTemplate.run(taskDeleteProcessor, taskDeleteRequest, new BaseResult());
     }
-    
+
     /**
      * @param taskBatchDeleteRequest
      * @return
@@ -100,28 +113,99 @@ public class TaskApi {
     public BaseResult batchDeleteTask(TaskDeleteInBatchRequest taskBatchDeleteRequest) {
         return SkyWalkerTemplate.run(taskDeleteInBatchProcessor, taskBatchDeleteRequest, new BaseResult());
     }
-    
+
     @RequestMapping(path = "/v1/task/add", method = RequestMethod.POST)
     public BaseResult taskAdd(@RequestBody TaskAddRequest addTaskRequest) {
-        
+
         return SkyWalkerTemplate.run(taskAddProcessor, addTaskRequest, new TaskAddResult());
     }
-    
+
     /**
-     * TODO 目前仅支持 Nacos 为源的同步类型，待完善更多类型支持.
      * <p>
      * 支持从 sourceCluster 获取所有 service，然后生成同步到 destCluster 的任务。
      * </p>
      */
     @RequestMapping(path = "/v1/task/addAll", method = RequestMethod.POST)
     public BaseResult taskAddAll(@RequestBody TaskAddAllRequest addAllRequest) {
-        
         return SkyWalkerTemplate.run(taskAddAllProcessor, addAllRequest, new TaskAddResult());
     }
-    
+
+    @RequestMapping(path = "/v1/task/deleteClusterTask", method = RequestMethod.DELETE)
+    public BaseResult deleteClusterTask(TaskDeleteRequest taskDeleteRequest) {
+        BaseResult result = new BaseResult();
+        try {
+            ClusterTaskDO clusterTaskDO = clusterTaskAccessService.findByTaskId(taskDeleteRequest.getTaskId());
+            if (Objects.isNull(clusterTaskDO)) {
+                result.setResultMessage("未查询到该任务！");
+            } else {
+                clusterTaskDO.setTaskStatus(TaskStatusEnum.DELETE.getCode());
+                clusterTaskAccessService.addTask(clusterTaskDO);
+                List<TaskDO> taskDOList = taskAccessService.findByClusterTaskId(clusterTaskDO.getClusterTaskId());
+                for (TaskDO taskDO : taskDOList) {
+                    taskDO.setTaskStatus(TaskStatusEnum.DELETE.getCode());
+                    taskAccessService.addTask(taskDO);
+                }
+            }
+        } catch (Throwable e) {
+            log.error("processor.process error", e);
+            SkyWalkerTemplate.initExceptionResult(result, e);
+        }
+        return result;
+    }
+
+    @RequestMapping(path = "/v1/task/clusterTaskList", method = RequestMethod.GET)
+    public ClusterTaskListQueryResult clusterTasks(TaskListQueryRequest taskListQueryRequest) {
+        Page<ClusterTaskDO> clusterTaskDOS;
+        ClusterTaskListQueryResult taskListQueryResult = new ClusterTaskListQueryResult();
+        try {
+            clusterTaskDOS = clusterTaskAccessService.findPageNoCriteria(taskListQueryRequest.getPageNum() - 1,
+                    taskListQueryRequest.getPageSize());
+            List<ClusterTaskModel> taskList = new ArrayList<>();
+            clusterTaskDOS.forEach(taskDO -> {
+                ClusterTaskModel taskModel = new ClusterTaskModel();
+                taskModel.setClusterTaskId(taskDO.getClusterTaskId());
+                taskModel.setDestClusterId(taskDO.getDestClusterId());
+                taskModel.setSourceClusterId(taskDO.getSourceClusterId());
+                taskModel.setGroupName(taskDO.getGroupName());
+                taskModel.setTaskStatus(taskDO.getTaskStatus());
+                taskList.add(taskModel);
+            });
+            taskListQueryResult.setTaskModels(taskList);
+            taskListQueryResult.setTotalPage(clusterTaskDOS.getTotalPages());
+            taskListQueryResult.setTotalSize(clusterTaskDOS.getTotalElements());
+            taskListQueryResult.setCurrentSize(taskList.size());
+        } catch (Exception e) {
+            log.error("processor.process error", e);
+            SkyWalkerTemplate.initExceptionResult(taskListQueryResult, e);
+        }
+        return taskListQueryResult;
+    }
+
+    @RequestMapping(path = "/v1/task/clusterTaskDetail", method = RequestMethod.GET)
+    public ClusterTaskDetailQueryResult getByClusterTaskId(ClusterTaskDetailQueryRequest request) {
+        ClusterTaskDetailQueryResult result = new ClusterTaskDetailQueryResult();
+        try {
+            ClusterTaskDO clusterTaskDO = clusterTaskAccessService.findByTaskId(request.getClusterTaskId());
+            if (null == clusterTaskDO) {
+                throw new SkyWalkerException("clusterTaskDO is null, clusterTaskId :" + request.getClusterTaskId());
+            }
+            ClusterTaskModel taskModel = new ClusterTaskModel();
+            taskModel.setDestClusterId(clusterTaskDO.getDestClusterId());
+            taskModel.setGroupName(clusterTaskDO.getGroupName());
+            taskModel.setSourceClusterId(clusterTaskDO.getSourceClusterId());
+            taskModel.setTaskStatus(clusterTaskDO.getTaskStatus());
+            taskModel.setClusterTaskId(clusterTaskDO.getClusterTaskId());
+            result.setClusterTaskModel(taskModel);
+        } catch (Exception e) {
+            log.error("processor.process error", e);
+            SkyWalkerTemplate.initExceptionResult(result, e);
+        }
+        return result;
+    }
+
     @RequestMapping(path = "/v1/task/update", method = RequestMethod.POST)
     public BaseResult updateTask(@RequestBody TaskUpdateRequest taskUpdateRequest) {
-        
+
         return SkyWalkerTemplate.run(taskUpdateProcessor, taskUpdateRequest, new BaseResult());
     }
 }
