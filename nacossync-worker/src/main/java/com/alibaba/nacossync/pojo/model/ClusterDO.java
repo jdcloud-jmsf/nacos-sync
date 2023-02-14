@@ -68,4 +68,6 @@ public class ClusterDO implements Serializable {
 
     private String namespace;
 
+    private String meshId;
+
 }

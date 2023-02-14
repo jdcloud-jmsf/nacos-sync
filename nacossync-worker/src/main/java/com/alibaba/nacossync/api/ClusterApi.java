@@ -18,6 +18,9 @@
 package com.alibaba.nacossync.api;
 
 import com.alibaba.nacossync.constant.ClusterTypeEnum;
+import com.alibaba.nacossync.dao.ClusterAccessService;
+import com.alibaba.nacossync.pojo.QueryCondition;
+import com.alibaba.nacossync.pojo.model.ClusterDO;
 import com.alibaba.nacossync.pojo.request.ClusterAddRequest;
 import com.alibaba.nacossync.pojo.request.ClusterDeleteRequest;
 import com.alibaba.nacossync.pojo.request.ClusterDetailQueryRequest;
@@ -27,16 +30,20 @@ import com.alibaba.nacossync.pojo.result.ClusterDeleteResult;
 import com.alibaba.nacossync.pojo.result.ClusterDetailQueryResult;
 import com.alibaba.nacossync.pojo.result.ClusterListQueryResult;
 import com.alibaba.nacossync.pojo.result.ClusterTypeResult;
+import com.alibaba.nacossync.pojo.view.ClusterModel;
 import com.alibaba.nacossync.template.SkyWalkerTemplate;
 import com.alibaba.nacossync.template.processor.ClusterAddProcessor;
 import com.alibaba.nacossync.template.processor.ClusterDeleteProcessor;
 import com.alibaba.nacossync.template.processor.ClusterDetailQueryProcessor;
 import com.alibaba.nacossync.template.processor.ClusterListQueryProcessor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author NacosSync
@@ -53,20 +60,46 @@ public class ClusterApi {
     private final ClusterDetailQueryProcessor clusterDetailQueryProcessor;
     
     private final ClusterListQueryProcessor clusterListQueryProcessor;
+
+    private final ClusterAccessService clusterAccessService;
     
     public ClusterApi(ClusterAddProcessor clusterAddProcessor, ClusterDeleteProcessor clusterDeleteProcessor,
             ClusterDetailQueryProcessor clusterDetailQueryProcessor,
-            ClusterListQueryProcessor clusterListQueryProcessor) {
+            ClusterListQueryProcessor clusterListQueryProcessor, ClusterAccessService clusterAccessService) {
         this.clusterAddProcessor = clusterAddProcessor;
         this.clusterDeleteProcessor = clusterDeleteProcessor;
         this.clusterDetailQueryProcessor = clusterDetailQueryProcessor;
         this.clusterListQueryProcessor = clusterListQueryProcessor;
+        this.clusterAccessService = clusterAccessService;
     }
     
     @RequestMapping(path = "/v1/cluster/list", method = RequestMethod.GET)
     public ClusterListQueryResult clusters(ClusterListQueryRequest clusterListQueryRequest) {
         
         return SkyWalkerTemplate.run(clusterListQueryProcessor, clusterListQueryRequest, new ClusterListQueryResult());
+    }
+
+    @RequestMapping(path = "/v1/cluster/listByMeshId", method = RequestMethod.GET)
+    public ClusterListQueryResult clusters(@RequestParam(name = "meshId") String meshId) {
+        ClusterListQueryResult result = new ClusterListQueryResult();
+        if (StringUtils.isEmpty(meshId)) {
+            result.setSuccess(false);
+            return result;
+        }
+        List<ClusterDO> clusterDOS = clusterAccessService.findByMeshId(meshId);
+        List<ClusterModel> clusterModels = new ArrayList<>();
+        clusterDOS.forEach(clusterDO -> {
+            ClusterModel clusterModel = new ClusterModel();
+            clusterModel.setClusterId(clusterDO.getClusterId());
+            clusterModel.setClusterName(clusterDO.getClusterName());
+            clusterModel.setClusterType(clusterDO.getClusterType());
+            clusterModel.setConnectKeyList(clusterDO.getConnectKeyList());
+            clusterModel.setNamespace(clusterDO.getNamespace());
+            clusterModels.add(clusterModel);
+        });
+        result.setClusterModels(clusterModels);
+        result.setCurrentSize(clusterModels.size());
+        return result;
     }
     
     @RequestMapping(path = "/v1/cluster/detail", method = RequestMethod.GET)

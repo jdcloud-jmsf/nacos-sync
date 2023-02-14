@@ -63,6 +63,10 @@ public class ClusterAccessService implements PageQueryService<ClusterDO> {
         return clusterRepository.findByClusterId(clusterId);
     }
 
+    public List<ClusterDO> findByMeshId(String meshId) {
+        return clusterRepository.findAllByMeshId(meshId);
+    }
+
     @Override
     public Page<ClusterDO> findPageNoCriteria(Integer pageNum, Integer size) {
 

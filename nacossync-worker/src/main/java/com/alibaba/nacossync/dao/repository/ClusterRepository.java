@@ -16,13 +16,13 @@
  */
 package com.alibaba.nacossync.dao.repository;
 
-import javax.transaction.Transactional;
-
+import com.alibaba.nacossync.pojo.model.ClusterDO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.CrudRepository;
 
-import com.alibaba.nacossync.pojo.model.ClusterDO;
+import javax.transaction.Transactional;
+import java.util.List;
 
 /**
  * @author NacosSync
@@ -35,5 +35,7 @@ public interface ClusterRepository extends CrudRepository<ClusterDO, Integer>, J
 
     @Transactional
     int deleteByClusterId(String clusterId);
+
+    List<ClusterDO> findAllByMeshId(String meshId);
 
 }

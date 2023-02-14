@@ -10,6 +10,8 @@ CREATE TABLE `cluster` (
   `connect_key_list` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
   `user_name` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
   `password` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `namespace` VARCHAR(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `mesh_id` VARCHAR(255) COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /******************************************/
