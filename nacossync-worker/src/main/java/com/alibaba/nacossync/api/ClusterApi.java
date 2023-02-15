@@ -104,7 +104,7 @@ public class ClusterApi {
     }
     
     @RequestMapping(path = "/v1/cluster/detail", method = RequestMethod.GET)
-    public ClusterDetailQueryResult getByTaskId(ClusterDetailQueryRequest clusterDetailQueryRequest) {
+    public ClusterDetailQueryResult getByClusterId(ClusterDetailQueryRequest clusterDetailQueryRequest) {
         
         return SkyWalkerTemplate.run(clusterDetailQueryProcessor, clusterDetailQueryRequest,
                 new ClusterDetailQueryResult());

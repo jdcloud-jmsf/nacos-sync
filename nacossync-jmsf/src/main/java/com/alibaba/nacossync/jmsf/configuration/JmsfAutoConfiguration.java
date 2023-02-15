@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Bean;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-@ConditionalOnProperty(value = "jmsf.msi.enabled",  havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "jmsf.msi.enabled",  havingValue = "true", matchIfMissing = false)
 @org.springframework.context.annotation.Configuration
 @EnableConfigurationProperties(JmsfCrdProperties.class)
 public class JmsfAutoConfiguration {
