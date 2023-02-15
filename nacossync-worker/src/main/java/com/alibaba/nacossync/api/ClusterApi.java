@@ -95,6 +95,7 @@ public class ClusterApi {
             clusterModel.setClusterType(clusterDO.getClusterType());
             clusterModel.setConnectKeyList(clusterDO.getConnectKeyList());
             clusterModel.setNamespace(clusterDO.getNamespace());
+            clusterModel.setMeshId(clusterDO.getMeshId());
             clusterModels.add(clusterModel);
         });
         result.setClusterModels(clusterModels);
