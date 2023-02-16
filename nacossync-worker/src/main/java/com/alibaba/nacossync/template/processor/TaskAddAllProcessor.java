@@ -136,6 +136,10 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
                     if (addAllRequest.isExcludeConsumer() && serviceView.getName().startsWith(CONSUMER_PREFIX)) {
                         continue;
                     }
+                    if (StringUtils.isNotEmpty(addAllRequest.getGroupName())
+                            && !addAllRequest.getGroupName().equalsIgnoreCase(serviceView.getGroupName())) {
+                        continue;
+                    }
                     TaskAddRequest taskAddRequest = new TaskAddRequest();
                     taskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
                     taskAddRequest.setDestClusterId(destCluster.getClusterId());
@@ -179,6 +183,7 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
             taskDO.setClusterTaskId(clusterTaskId);
             taskDO.setDestClusterId(addAllRequest.getDestClusterId());
             taskDO.setSourceClusterId(addAllRequest.getSourceClusterId());
+            taskDO.setGroupName(addAllRequest.getGroupName());
             taskDO.setVersion(clusterTaskAddRequest.getVersion());
             taskDO.setNameSpace(clusterTaskAddRequest.getNameSpace());
             taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());

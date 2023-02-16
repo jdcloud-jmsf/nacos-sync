@@ -40,5 +40,7 @@ public class TaskAddAllRequest extends BaseRequest {
      * whether to exclude subscriber.
      */
     private boolean excludeConsumer = true;
+
+    private String groupName;
     
 }

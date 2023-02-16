@@ -33,7 +33,6 @@ import java.io.Serializable;
 public class MetadataDO implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private String metaKey;
 
     private String metaValue;

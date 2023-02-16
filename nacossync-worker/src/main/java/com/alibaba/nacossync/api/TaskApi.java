@@ -19,6 +19,7 @@ import com.alibaba.nacossync.dao.ClusterTaskAccessService;
 import com.alibaba.nacossync.dao.TaskAccessService;
 import com.alibaba.nacossync.exception.SkyWalkerException;
 import com.alibaba.nacossync.pojo.QueryCondition;
+import com.alibaba.nacossync.pojo.model.ClusterDO;
 import com.alibaba.nacossync.pojo.model.ClusterTaskDO;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.pojo.request.*;
@@ -36,6 +37,7 @@ import com.alibaba.nacossync.template.processor.TaskUpdateProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -71,10 +73,13 @@ public class TaskApi {
 
     private final ClusterTaskAccessService clusterTaskAccessService;
 
+    private final ClusterAccessService clusterAccessService;
+
     public TaskApi(TaskUpdateProcessor taskUpdateProcessor, TaskAddProcessor taskAddProcessor,
                    TaskAddAllProcessor taskAddAllProcessor, TaskDeleteProcessor taskDeleteProcessor,
                    TaskDeleteInBatchProcessor taskDeleteInBatchProcessor, TaskListQueryProcessor taskListQueryProcessor,
-                   TaskDetailProcessor taskDetailProcessor, TaskAccessService taskAccessService, ClusterTaskAccessService clusterTaskAccessService) {
+                   TaskDetailProcessor taskDetailProcessor, TaskAccessService taskAccessService,
+                   ClusterTaskAccessService clusterTaskAccessService, ClusterAccessService clusterAccessService) {
         this.taskUpdateProcessor = taskUpdateProcessor;
         this.taskAddProcessor = taskAddProcessor;
         this.taskAddAllProcessor = taskAddAllProcessor;
@@ -84,6 +89,7 @@ public class TaskApi {
         this.taskDetailProcessor = taskDetailProcessor;
         this.taskAccessService = taskAccessService;
         this.clusterTaskAccessService = clusterTaskAccessService;
+        this.clusterAccessService = clusterAccessService;
     }
 
     @RequestMapping(path = "/v1/task/list", method = RequestMethod.GET)
@@ -128,6 +134,36 @@ public class TaskApi {
     @RequestMapping(path = "/v1/task/addAll", method = RequestMethod.POST)
     public BaseResult taskAddAll(@RequestBody TaskAddAllRequest addAllRequest) {
         return SkyWalkerTemplate.run(taskAddAllProcessor, addAllRequest, new TaskAddResult());
+    }
+
+    @RequestMapping(path = "/v1/task/addClusterTask", method = RequestMethod.PUT)
+    public BaseResult addClusterTask(String meshIds) {
+        String[] meshIdList = meshIds.split(",");
+        for (String meshId : meshIdList) {
+            List<ClusterDO> clusterDOS = clusterAccessService.findByMeshId(meshId);
+            if (CollectionUtils.isEmpty(clusterDOS)) {
+                continue;
+            }
+            for (ClusterDO clusterDO : clusterDOS) {
+                TaskAddAllRequest addAllRequest = new TaskAddAllRequest();
+                addAllRequest.setSourceClusterId(clusterDO.getClusterId());
+                for (String id : meshIdList) {
+                    if (id.equalsIgnoreCase(meshId)) {
+                        continue;
+                    }
+                    List<ClusterDO> clusters = clusterAccessService.findByMeshId(id);
+                    if (CollectionUtils.isEmpty(clusterDOS)) {
+                        continue;
+                    }
+                    for (ClusterDO cluster : clusters) {
+                        addAllRequest.setDestClusterId(cluster.getClusterId());
+                        SkyWalkerTemplate.run(taskAddAllProcessor, addAllRequest, new TaskAddResult());
+                    }
+                }
+            }
+
+        }
+        return new TaskAddResult();
     }
 
     @RequestMapping(path = "/v1/task/deleteClusterTask", method = RequestMethod.DELETE)
