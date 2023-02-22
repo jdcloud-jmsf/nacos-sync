@@ -244,4 +244,27 @@ public class TaskApi {
 
         return SkyWalkerTemplate.run(taskUpdateProcessor, taskUpdateRequest, new BaseResult());
     }
+
+    @RequestMapping(path = "/v1/task/updateClusterTask", method = RequestMethod.POST)
+    public BaseResult updateClusterTask(@RequestBody TaskUpdateRequest taskUpdateRequest) {
+        BaseResult result = new BaseResult();
+        try {
+            ClusterTaskDO clusterTaskDO = clusterTaskAccessService.findByTaskId(taskUpdateRequest.getClusterTaskId());
+            if (Objects.isNull(clusterTaskDO)) {
+                result.setResultMessage("未查询到该任务！");
+            } else {
+                clusterTaskDO.setTaskStatus(TaskStatusEnum.valueOf(taskUpdateRequest.getTaskStatus()).getCode());
+                clusterTaskAccessService.addTask(clusterTaskDO);
+                List<TaskDO> taskDOList = taskAccessService.findByClusterTaskId(clusterTaskDO.getClusterTaskId());
+                for (TaskDO taskDO : taskDOList) {
+                    taskDO.setTaskStatus(TaskStatusEnum.valueOf(taskUpdateRequest.getTaskStatus()).getCode());
+                    taskAccessService.addTask(taskDO);
+                }
+            }
+        } catch (Throwable e) {
+            log.error("processor.process error", e);
+            SkyWalkerTemplate.initExceptionResult(result, e);
+        }
+        return result;
+    }
 }

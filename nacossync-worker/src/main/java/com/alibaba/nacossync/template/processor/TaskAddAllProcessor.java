@@ -126,9 +126,10 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
                 }
 
                 final EnhanceNamingService enhanceNamingService = new EnhanceNamingService(sourceNamingService);
-                final CatalogServiceResult catalogServiceResult = enhanceNamingService.catalogServices(null, null);
+                final CatalogServiceResult catalogServiceResult = enhanceNamingService.catalogServices(null, addAllRequest.getGroupName());
                 if (catalogServiceResult == null || catalogServiceResult.getCount() <= 0) {
-                    throw new SkyWalkerException("sourceCluster data empty");
+//                    throw new SkyWalkerException("sourceCluster data empty");
+                    return;
                 }
 
                 for (ServiceView serviceView : catalogServiceResult.getServiceList()) {

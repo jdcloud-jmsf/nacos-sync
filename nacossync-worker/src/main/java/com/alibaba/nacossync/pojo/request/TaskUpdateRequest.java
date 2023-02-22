@@ -26,6 +26,7 @@ import lombok.Data;
 public class TaskUpdateRequest extends BaseRequest {
 
     private String taskId;
+    private String clusterTaskId;
     /**
      * The current task status
      */
