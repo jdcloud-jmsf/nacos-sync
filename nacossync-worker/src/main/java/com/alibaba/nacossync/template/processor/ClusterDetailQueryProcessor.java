@@ -52,6 +52,7 @@ public class ClusterDetailQueryProcessor
         clusterModel.setClusterName(clusterDO.getClusterName());
         clusterModel.setNamespace(clusterDO.getNamespace());
         clusterModel.setUserName(clusterDO.getUserName());
+        clusterModel.setPassword(clusterDO.getPassword());
         clusterModel.setMeshId(clusterDO.getMeshId());
         clusterDetailQueryResult.setClusterModel(clusterModel);
 

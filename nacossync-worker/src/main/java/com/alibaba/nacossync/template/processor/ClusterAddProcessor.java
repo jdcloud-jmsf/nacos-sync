@@ -50,32 +50,22 @@ public class ClusterAddProcessor implements Processor<ClusterAddRequest, Cluster
 
     @Override
     public void process(ClusterAddRequest clusterAddRequest, ClusterAddResult clusterAddResult,
-        Object... others) throws Exception {
-        ClusterDO clusterDO = new ClusterDO();
-
+                        Object... others) throws Exception {
         if (null == clusterAddRequest.getConnectKeyList() || 0 == clusterAddRequest.getConnectKeyList().size()) {
-
             throw new SkyWalkerException("集群列表不能为空！");
         }
-
         if (StringUtils.isBlank(clusterAddRequest.getClusterName()) || StringUtils
-            .isBlank(clusterAddRequest.getClusterType())) {
-
+                .isBlank(clusterAddRequest.getClusterType())) {
             throw new SkyWalkerException("集群名字或者类型不能为空！");
         }
-
         if (!ClusterTypeEnum.contains(clusterAddRequest.getClusterType())) {
-
             throw new SkyWalkerException("集群类型不存在：" + clusterAddRequest.getClusterType());
         }
-
         String clusterId = SkyWalkerUtil.generateClusterId(clusterAddRequest);
-
-        if (null != clusterAccessService.findByClusterId(clusterId)) {
-
-            throw new SkyWalkerException("重复插入，clusterId已存在：" + clusterId);
+        ClusterDO clusterDO = clusterAccessService.findByClusterId(clusterId);
+        if (null == clusterDO) {
+            clusterDO = new ClusterDO();
         }
-
         clusterDO.setClusterId(clusterId);
         clusterDO.setClusterName(clusterAddRequest.getClusterName());
         clusterDO.setClusterType(clusterAddRequest.getClusterType());
