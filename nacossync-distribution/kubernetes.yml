@@ -18,6 +18,22 @@ items:
     selector:
       app: nacos-sync
     type: NodePort
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: nacos-sync-ingress
+    namespace: mesh
+  spec:
+    rules:
+      - host: nacos-sync.xxxx.jdcloud.com
+        http:
+          paths:
+            - backend:
+                service:
+                  name: nacos-sync
+                  port:
+                    number: 8080
+              path: /
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
