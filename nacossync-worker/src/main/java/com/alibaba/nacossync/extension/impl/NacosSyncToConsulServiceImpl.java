@@ -103,9 +103,16 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
     @Override
     public boolean sync(TaskDO taskDO) {
         try {
-            NamingService sourceNamingService =
-                    nacosServerHolder.get(taskDO.getSourceClusterId());
+            NamingService sourceNamingService = nacosServerHolder.get(taskDO.getSourceClusterId());
+            if (Objects.isNull(sourceNamingService)) {
+                log.error("未获取到该注册中心对应的client！clusterId={}", taskDO.getSourceClusterId());
+                return false;
+            }
             ConsulClient consulClient = consulServerHolder.get(taskDO.getDestClusterId());
+            if (Objects.isNull(consulClient)) {
+                log.error("未获取到该注册中心对应的client！clusterId={}", taskDO.getDestClusterId());
+                return false;
+            }
             log.info("开始处理同步任务，taskDO={}", taskDO);
             nacosListenerMap.putIfAbsent(taskDO.getTaskId(), event -> {
                 if (event instanceof NamingEvent) {

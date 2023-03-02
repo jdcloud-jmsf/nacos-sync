@@ -17,11 +17,13 @@ import com.alibaba.nacossync.pojo.model.ClusterDO;
 import com.ecwid.consul.v1.ConsulClient;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.net.URL;
 
@@ -46,7 +48,9 @@ public class ConsulServerHolder extends AbstractServerHolderImpl<ConsulClient> {
     @Override
     ConsulClient createServer(String clusterId, Supplier<String> serverAddressSupplier) throws Exception {
         ClusterDO clusterDO = clusterAccessService.findByClusterId(clusterId);
-        tokenMap.put(clusterId, clusterDO.getPassword());
+        if (Objects.nonNull(clusterDO) && StringUtils.hasText(clusterDO.getPassword())) {
+            tokenMap.put(clusterId, clusterDO.getPassword());
+        }
         String serverAddress = serverAddressSupplier.get();
         serverAddress = serverAddress.startsWith(HTTP) ? serverAddress : HTTP + serverAddress;
         URL url = new URL(serverAddress);
