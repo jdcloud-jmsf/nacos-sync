@@ -19,13 +19,11 @@ package com.alibaba.nacossync.timer;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacossync.cache.SkyWalkerCacheServices;
 import com.alibaba.nacossync.constant.MetricsStatisticsType;
+import com.alibaba.nacossync.constant.SkyWalkerConstants;
 import com.alibaba.nacossync.constant.TaskStatusEnum;
 import com.alibaba.nacossync.dao.ClusterTaskAccessService;
 import com.alibaba.nacossync.dao.MetadataAccessService;
 import com.alibaba.nacossync.dao.TaskAccessService;
-import com.alibaba.nacossync.event.DeleteTaskEvent;
-import com.alibaba.nacossync.event.SyncTaskEvent;
-import com.alibaba.nacossync.jmsf.constant.JmsfConstants;
 import com.alibaba.nacossync.monitor.MetricsManager;
 import com.alibaba.nacossync.pojo.model.ClusterTaskDO;
 import com.alibaba.nacossync.pojo.model.MetadataDO;
@@ -33,7 +31,6 @@ import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.pojo.request.TaskAddAllRequest;
 import com.alibaba.nacossync.template.processor.TaskAddAllProcessor;
 import com.alibaba.nacossync.util.SkyWalkerUtil;
-import com.google.common.eventbus.EventBus;
 import io.meshware.common.timer.ScheduleTask;
 import io.meshware.common.timer.Timer;
 import lombok.extern.slf4j.Slf4j;
@@ -45,8 +42,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * QuerySyncClusterTaskTimer
@@ -91,10 +86,10 @@ public class QuerySyncClusterTaskTimer implements CommandLineRunner {
             CompletableFuture<Void> completableFuture = new CompletableFuture<>();
             Long start = System.currentTimeMillis();
             try {
-                MetadataDO metadataDO = metadataAccessService.getMetadataByKey(JmsfConstants.CLUSTER_LEADER);
+                MetadataDO metadataDO = metadataAccessService.getMetadataByKey(SkyWalkerConstants.CLUSTER_LEADER);
                 if (Objects.isNull(metadataDO)) {
                     metadataDO = new MetadataDO();
-                    metadataDO.setMetaKey(JmsfConstants.CLUSTER_LEADER);
+                    metadataDO.setMetaKey(SkyWalkerConstants.CLUSTER_LEADER);
                     metadataDO.setMetaValue(SkyWalkerUtil.getLocalIp());
                     metadataDO.setVersion(MD5Utils.encodeHexString(metadataDO.getMetaValue().getBytes(StandardCharsets.UTF_8)));
                     metadataDO.setExpirationTime(System.currentTimeMillis() + 10000);

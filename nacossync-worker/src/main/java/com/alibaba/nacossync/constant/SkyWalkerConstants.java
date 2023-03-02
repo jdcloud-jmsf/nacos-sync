@@ -36,4 +36,9 @@ public class SkyWalkerConstants {
     public static  final String PAGE_NO="pageNo";
     public static  final String PAGE_SIZE="pageSize";
 
+    /**
+     * Metadata
+     */
+    public final static String CLUSTER_LEADER = "cluster_leader";
+
 }
