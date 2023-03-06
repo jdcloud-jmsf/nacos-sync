@@ -35,9 +35,9 @@ import com.alibaba.nacossync.template.processor.TaskDetailProcessor;
 import com.alibaba.nacossync.template.processor.TaskListQueryProcessor;
 import com.alibaba.nacossync.template.processor.TaskUpdateProcessor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -173,13 +173,17 @@ public class TaskApi {
             ClusterTaskDO clusterTaskDO = clusterTaskAccessService.findByTaskId(taskDeleteRequest.getTaskId());
             if (Objects.isNull(clusterTaskDO)) {
                 result.setResultMessage("未查询到该任务！");
+                result.setSuccess(false);
             } else {
-                clusterTaskDO.setTaskStatus(TaskStatusEnum.DELETE.getCode());
-                clusterTaskAccessService.addTask(clusterTaskDO);
-                List<TaskDO> taskDOList = taskAccessService.findByClusterTaskId(clusterTaskDO.getClusterTaskId());
-                for (TaskDO taskDO : taskDOList) {
-                    taskDO.setTaskStatus(TaskStatusEnum.DELETE.getCode());
-                    taskAccessService.addTask(taskDO);
+                if (!TaskStatusEnum.DELETE.getCode().equals(clusterTaskDO.getTaskStatus())) {
+                    result.setResultMessage("该任务未暂停，请暂停后再执行删除操作！");
+                    result.setSuccess(false);
+                } else {
+                    List<TaskDO> taskDOList = taskAccessService.findByClusterTaskId(clusterTaskDO.getClusterTaskId());
+                    for (TaskDO taskDO : taskDOList) {
+                        taskAccessService.deleteTaskById(taskDO.getTaskId());
+                    }
+                    clusterTaskAccessService.deleteTaskById(clusterTaskDO.getClusterTaskId());
                 }
             }
         } catch (Throwable e) {
@@ -252,6 +256,7 @@ public class TaskApi {
             ClusterTaskDO clusterTaskDO = clusterTaskAccessService.findByTaskId(taskUpdateRequest.getClusterTaskId());
             if (Objects.isNull(clusterTaskDO)) {
                 result.setResultMessage("未查询到该任务！");
+                result.setSuccess(false);
             } else {
                 clusterTaskDO.setTaskStatus(TaskStatusEnum.valueOf(taskUpdateRequest.getTaskStatus()).getCode());
                 clusterTaskAccessService.addTask(clusterTaskDO);
