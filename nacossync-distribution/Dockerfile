@@ -45,5 +45,5 @@ RUN rm -f *.zip
 
 VOLUME ["/export/servers/nacos-sync/logs", "/export/servers/nacos-sync/conf"]
 EXPOSE 8080
-ENTRYPOINT ["/export/servers/nacos-sync/bin/startup.sh", "start", ""]
+ENTRYPOINT ["sh", "-l", "/export/servers/nacos-sync/bin/startup.sh", "start", ""]
 #ENTRYPOINT ["java","-jar","-Dloader.path=config","/export/servers/jmsf-provider.jar","--spring.config.location=/export/servers/config/"]
