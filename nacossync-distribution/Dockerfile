@@ -13,8 +13,8 @@ RUN wget --no-check-certificate http://d6.injdk.cn/oraclejdk/8/jdk-8u301-linux-x
     && tar -zxvf jdk-8u301-linux-x64.tar.gz -C /usr/local \
     && mv /usr/local/jdk1.8.0_301/ /usr/local/jdk/
 
-ENV JAVA_HOME /usr/local/jdk
-ENV JRE_HOME /usr/local/jdk/jre
+ENV JAVA_HOME /usr/local
+ENV JRE_HOME /usr/local/jre
 ENV PATH $JAVA_HOME/bin:$PATH
 
 WORKDIR /export/servers/
@@ -30,8 +30,8 @@ COPY --from=builder /export/servers/nacossync-distribution/target/*.zip /export/
 
 COPY --from=builder /usr/local/* /usr/local/
 
-ENV JAVA_HOME /usr/local/jdk
-ENV JRE_HOME /usr/local/jdk/jre
+ENV JAVA_HOME /usr/local
+ENV JRE_HOME /usr/local/jre
 ENV PATH $JAVA_HOME/bin:$PATH
 
 RUN chmod -R 777 /export/servers/*

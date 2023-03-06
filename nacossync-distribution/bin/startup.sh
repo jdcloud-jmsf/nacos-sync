@@ -18,7 +18,7 @@ error_exit ()
 [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=$HOME/jdk/java
 [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/usr/java
 [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/opt/taobao/java
-[ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/usr/local/jdk
+[ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/usr/local
 [ ! -e "$JAVA_HOME/bin/java" ] && unset JAVA_HOME
 
 if [ -z "$JAVA_HOME" ]; then
