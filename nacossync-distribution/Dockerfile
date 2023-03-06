@@ -10,8 +10,7 @@ WORKDIR /workspace
 
 ENV TZ Asia/Shanghai
 RUN wget --no-check-certificate http://d6.injdk.cn/oraclejdk/8/jdk-8u301-linux-x64.tar.gz  \
-    && tar -zxvf jdk-8u301-linux-x64.tar.gz \
-    && cp -r /workspace/jdk1.8.0_301/ /usr/local/ \
+    && tar -zxvf jdk-8u301-linux-x64.tar.gz -C /usr/local \
     && mv /usr/local/jdk1.8.0_301/ /usr/local/jdk/
 
 ENV JAVA_HOME /usr/local/jdk
