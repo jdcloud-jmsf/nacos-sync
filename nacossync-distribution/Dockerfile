@@ -26,7 +26,7 @@ RUN mvn --batch-mode clean package -Dmaven.test.skip=true -Pbackend,dist-backend
 FROM ${TPAAS_RUNTIME_IMAGE}
 WORKDIR /export/servers/
 
-COPY --from=builder /export/servers/nacossync-distribution/*.zip /export/servers/
+COPY --from=builder /export/servers/nacossync-distribution/target/*.zip /export/servers/
 
 COPY --from=builder /usr/local/* /usr/local/
 
