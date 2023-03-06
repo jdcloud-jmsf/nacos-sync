@@ -42,8 +42,11 @@ RUN /bin/bash -c 'for f in /export/servers/*; do if [ ${f##*.} == 'zip' ];then u
 
 RUN rm -f *.zip
 
+RUN echo 'export JAVA_HOME=/usr/local/jdk1.8.0_301/' >> /etc/profile
+RUN echo 'export PATH=$PATH:${JAVA_HOME}/bin' >> /etc/profile
+RUN source /etc/profile
 
 VOLUME ["/export/servers/nacos-sync/logs", "/export/servers/nacos-sync/conf"]
 EXPOSE 8080
-ENTRYPOINT ["sh", "-l", "/export/servers/nacos-sync/bin/startup.sh", "start", ""]
+ENTRYPOINT ["/export/servers/nacos-sync/bin/startup.sh", "start", ""]
 #ENTRYPOINT ["java","-jar","-Dloader.path=config","/export/servers/jmsf-provider.jar","--spring.config.location=/export/servers/config/"]
