@@ -41,4 +41,7 @@ public interface ClusterTaskRepository extends CrudRepository<ClusterTaskDO, Int
     
     List<ClusterTaskDO> findAllByClusterTaskIdIn(List<String> taskIds);
 
+    List<ClusterTaskDO> findBySourceClusterId(String sourceClusterId);
+
+    List<ClusterTaskDO> findByDestClusterId(String destClusterId);
 }

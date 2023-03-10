@@ -44,4 +44,8 @@ public interface TaskRepository extends CrudRepository<TaskDO, Integer>, JpaRepo
 
     List<TaskDO> findAllByClusterTaskId(String clusterTaskId);
 
+    List<TaskDO> findBySourceClusterId(String sourceClusterId);
+
+    List<TaskDO> findByDestClusterId(String destClusterId);
+
 }

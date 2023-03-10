@@ -120,4 +120,12 @@ public class TaskAccessService implements PageQueryService<TaskDO> {
                 }, pageable);
     }
 
+    public List<TaskDO> findBySourceClusterId(String sourceClusterId) {
+        return taskRepository.findBySourceClusterId(sourceClusterId);
+    }
+
+    public List<TaskDO> findByDestClusterId(String destClusterId) {
+        return taskRepository.findByDestClusterId(destClusterId);
+    }
+
 }

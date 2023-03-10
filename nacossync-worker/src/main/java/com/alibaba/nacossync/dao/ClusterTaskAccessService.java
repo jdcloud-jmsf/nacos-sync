@@ -19,6 +19,7 @@ package com.alibaba.nacossync.dao;
 import com.alibaba.nacossync.dao.repository.ClusterTaskRepository;
 import com.alibaba.nacossync.pojo.QueryCondition;
 import com.alibaba.nacossync.pojo.model.ClusterTaskDO;
+import com.alibaba.nacossync.pojo.model.TaskDO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -101,5 +102,14 @@ public class ClusterTaskAccessService implements PageQueryService<ClusterTaskDO>
             return getPredicate(criteriaBuilder, predicates);
         }, pageable);
     }
+
+    public List<ClusterTaskDO> findBySourceClusterId(String sourceClusterId) {
+        return clusterTaskRepository.findBySourceClusterId(sourceClusterId);
+    }
+
+    public List<ClusterTaskDO> findByDestClusterId(String destClusterId) {
+        return clusterTaskRepository.findByDestClusterId(destClusterId);
+    }
+
 
 }
