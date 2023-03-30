@@ -72,4 +72,10 @@ public class TaskDO implements Serializable {
     private String operationId;
 
     private String clusterTaskId;
+    
+    /**
+     * current task status
+     */
+    private Integer status;
+
 }

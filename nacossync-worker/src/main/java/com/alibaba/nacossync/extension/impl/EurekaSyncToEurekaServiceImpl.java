@@ -74,7 +74,7 @@ public class EurekaSyncToEurekaServiceImpl implements SyncService {
     }
 
     @Override
-    public boolean sync(TaskDO taskDO) {
+    public boolean sync(TaskDO taskDO, Integer index) {
         try {
             EurekaNamingService eurekaNamingService = eurekaServerHolder.get(taskDO.getSourceClusterId());
             EurekaNamingService destEurekaNamingService = eurekaServerHolder.get(taskDO.getDestClusterId());
@@ -90,7 +90,7 @@ public class EurekaSyncToEurekaServiceImpl implements SyncService {
                 }
                 addValidInstance(taskDO, destEurekaNamingService, eurekaInstances);
             }
-            specialSyncEventBus.subscribe(taskDO, this::sync);
+            specialSyncEventBus.subscribe(taskDO, t->sync(t, index));
         } catch (Exception e) {
             log.error("sync task from eureka to eureka was failed, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);

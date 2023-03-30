@@ -15,11 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -101,7 +97,7 @@ public abstract class AbstractNacosSync implements SyncService {
     }
 
     @Override
-    public boolean sync(TaskDO taskDO) {
+    public boolean sync(TaskDO taskDO, Integer index) {
         String taskId = taskDO.getTaskId();
         try {
             NamingService sourceNamingService = nacosServerHolder.get(taskDO.getSourceClusterId());
@@ -185,6 +181,16 @@ public abstract class AbstractNacosSync implements SyncService {
                 removeInvalidInstance(taskDO, oldInstanceKeys);
             }
         }
+    }
+
+    @Override
+    public boolean needDelete(Map<String, String> destMetaData, TaskDO taskDO) {
+        return SyncService.super.needDelete(destMetaData, taskDO);
+    }
+
+    @Override
+    public boolean needSync(Map<String, String> sourceMetaData) {
+        return SyncService.super.needSync(sourceMetaData);
     }
 
     public abstract String composeInstanceKey(String ip, int port);

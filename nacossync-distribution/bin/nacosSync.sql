@@ -12,6 +12,7 @@ CREATE TABLE `cluster` (
   `password` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
   `namespace` VARCHAR(255) COLLATE utf8mb4_bin DEFAULT NULL,
   `mesh_id` VARCHAR(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `cluster_level` int default 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /******************************************/
@@ -41,6 +42,7 @@ CREATE TABLE `task` (
   `task_status` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
   `version` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
   `worker_ip` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `status` int default null ,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 

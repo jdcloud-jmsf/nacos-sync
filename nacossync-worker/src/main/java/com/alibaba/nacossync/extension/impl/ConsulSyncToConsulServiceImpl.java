@@ -91,7 +91,7 @@ public class ConsulSyncToConsulServiceImpl implements SyncService {
     }
 
     @Override
-    public boolean sync(TaskDO taskDO) {
+    public boolean sync(TaskDO taskDO, Integer index) {
         try {
             ConsulClient consulClient = consulServerHolder.get(taskDO.getSourceClusterId());
             ConsulClient consulClient2 = consulServerHolder.get(taskDO.getDestClusterId());
@@ -102,7 +102,7 @@ public class ConsulSyncToConsulServiceImpl implements SyncService {
             Set<String> instanceKeys = new HashSet<>();
             overrideAllInstance(taskDO, consulClient2, healthServiceList, instanceKeys);
             cleanAllOldInstance(taskDO, consulClient2, instanceKeys);
-            specialSyncEventBus.subscribe(taskDO, this::sync);
+            specialSyncEventBus.subscribe(taskDO, t->sync(t, index));
         } catch (Exception e) {
             log.error("Sync task from consul to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);

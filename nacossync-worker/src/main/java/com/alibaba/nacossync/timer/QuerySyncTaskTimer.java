@@ -23,6 +23,8 @@ import com.alibaba.nacossync.dao.MetadataAccessService;
 import com.alibaba.nacossync.dao.TaskAccessService;
 import com.alibaba.nacossync.event.DeleteTaskEvent;
 import com.alibaba.nacossync.event.SyncTaskEvent;
+import com.alibaba.nacossync.extension.SyncManagerService;
+import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.monitor.MetricsManager;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.google.common.eventbus.EventBus;
@@ -55,6 +57,15 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
 
     @Autowired
     private ScheduledExecutorService scheduledExecutorService;
+    
+    @Autowired
+    private NacosServerHolder nacosServerHolder;
+    
+    @Autowired
+    private SyncManagerService syncManagerService;
+    
+    @Autowired
+    private FastSyncHelper fastSyncHelper;
 
     @Autowired
     private MetadataAccessService metadataAccessService;
@@ -64,7 +75,10 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
         /** Fetch the task list from the database every 3 seconds */
         scheduledExecutorService.scheduleWithFixedDelay(new CheckRunningStatusThread(), 0, 3000,
                 TimeUnit.MILLISECONDS);
-
+        
+        scheduledExecutorService.scheduleWithFixedDelay(new CheckRunningStatusAllThread(metricsManager,skyWalkerCacheServices,
+                taskAccessService,eventBus, nacosServerHolder, fastSyncHelper), 0, 3000,
+                TimeUnit.MILLISECONDS);
     }
 
     private class CheckRunningStatusThread implements Runnable {
