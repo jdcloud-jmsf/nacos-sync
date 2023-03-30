@@ -148,6 +148,7 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
                     taskAddRequest.setGroupName(serviceView.getGroupName());
                     this.dealTask(addAllRequest, taskAddRequest);
                 }
+                break;
             case CONSUL:
                 ConsulClient consulClient = consulServerHolder.get(sourceCluster.getClusterId());
                 if (consulClient == null) {

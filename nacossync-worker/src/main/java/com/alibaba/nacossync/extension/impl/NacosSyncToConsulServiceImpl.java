@@ -122,6 +122,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         List<Instance> sourceInstances = sourceNamingService.getAllInstances(taskDO.getServiceName(),
                                 NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
                         // 先将新的注册一遍
+                        log.info("The number of instances of the service({}) from nacos is:{}", taskDO.getServiceName(), sourceInstances.size());
                         for (Instance instance : sourceInstances) {
                             if (needSync(instance.getMetadata())) {
                                 consulClient.agentServiceRegister(buildSyncInstance(instance, taskDO),
@@ -136,6 +137,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                                 consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT,
                                         ConsulServerHolder.getToken(taskDO.getDestClusterId()));
                         List<HealthService> healthServices = serviceResponse.getValue();
+                        log.info("The number of instances of the service({}) from consul is:{}", taskDO.getServiceName(), healthServices.size());
                         for (HealthService healthService : healthServices) {
 
                             if (needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO)
@@ -159,7 +161,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                     NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()),
                     nacosListenerMap.get(taskDO.getTaskId()));
         } catch (Exception e) {
-            log.error("sync task from nacos to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
+            log.error("sync task from nacos to consul was failed, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
             return false;
         }
