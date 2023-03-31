@@ -16,21 +16,17 @@
  */
 package com.alibaba.nacossync.timer;
 
-import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacossync.cache.SkyWalkerCacheServices;
 import com.alibaba.nacossync.constant.MetricsStatisticsType;
-import com.alibaba.nacossync.constant.SkyWalkerConstants;
 import com.alibaba.nacossync.constant.TaskStatusEnum;
 import com.alibaba.nacossync.dao.ClusterTaskAccessService;
 import com.alibaba.nacossync.dao.MetadataAccessService;
 import com.alibaba.nacossync.dao.TaskAccessService;
 import com.alibaba.nacossync.monitor.MetricsManager;
 import com.alibaba.nacossync.pojo.model.ClusterTaskDO;
-import com.alibaba.nacossync.pojo.model.MetadataDO;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.pojo.request.TaskAddAllRequest;
 import com.alibaba.nacossync.template.processor.TaskAddAllProcessor;
-import com.alibaba.nacossync.util.SkyWalkerUtil;
 import io.meshware.common.timer.ScheduleTask;
 import io.meshware.common.timer.Timer;
 import lombok.extern.slf4j.Slf4j;
@@ -38,9 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -86,23 +80,12 @@ public class QuerySyncClusterTaskTimer implements CommandLineRunner {
             CompletableFuture<Void> completableFuture = new CompletableFuture<>();
             Long start = System.currentTimeMillis();
             try {
-                MetadataDO metadataDO = metadataAccessService.getMetadataByKey(SkyWalkerConstants.CLUSTER_LEADER);
-                if (Objects.isNull(metadataDO)) {
-                    metadataDO = new MetadataDO();
-                    metadataDO.setMetaKey(SkyWalkerConstants.CLUSTER_LEADER);
-                    metadataDO.setMetaValue(SkyWalkerUtil.getLocalIp());
-                    metadataDO.setVersion(MD5Utils.encodeHexString(metadataDO.getMetaValue().getBytes(StandardCharsets.UTF_8)));
-                    metadataDO.setExpirationTime(System.currentTimeMillis() + 10000);
-                    metadataAccessService.saveMetadataByKey(metadataDO);
-                } else if (Objects.isNull(metadataDO.getExpirationTime()) || metadataDO.getExpirationTime() < System.currentTimeMillis()
-                        || SkyWalkerUtil.getLocalIp().equals(metadataDO.getMetaValue())) {
-                    metadataDO.setMetaValue(SkyWalkerUtil.getLocalIp());
-                    metadataDO.setVersion(MD5Utils.encodeHexString(metadataDO.getMetaValue().getBytes(StandardCharsets.UTF_8)));
-                    metadataDO.setExpirationTime(System.currentTimeMillis() + 10000);
-                    metadataAccessService.saveMetadataByKey(metadataDO);
-                } else {
+                if (!CampaignTaskTimer.IS_LEADER.get()) {
                     completableFuture.complete(null);
+                    log.info("The current node is a standby node and does not perform cluster task processing.");
                     return completableFuture;
+                } else {
+                    log.info("The current node is a work node and does perform cluster task processing.");
                 }
                 Iterable<ClusterTaskDO> clusterTaskDOS = clusterTaskAccessService.findAll();
                 clusterTaskDOS.forEach(taskDO -> {
@@ -144,7 +127,7 @@ public class QuerySyncClusterTaskTimer implements CommandLineRunner {
 
         @Override
         public String getName() {
-            return "refresh-cluster-task";
+            return "query-sync-cluster-task";
         }
     }
 }

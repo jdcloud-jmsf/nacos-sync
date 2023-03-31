@@ -57,13 +57,13 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
 
     @Autowired
     private ScheduledExecutorService scheduledExecutorService;
-    
+
     @Autowired
     private NacosServerHolder nacosServerHolder;
-    
+
     @Autowired
     private SyncManagerService syncManagerService;
-    
+
     @Autowired
     private FastSyncHelper fastSyncHelper;
 
@@ -75,9 +75,9 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
         /** Fetch the task list from the database every 3 seconds */
         scheduledExecutorService.scheduleWithFixedDelay(new CheckRunningStatusThread(), 0, 3000,
                 TimeUnit.MILLISECONDS);
-        
+
         scheduledExecutorService.scheduleWithFixedDelay(new CheckRunningStatusAllThread(metricsManager,skyWalkerCacheServices,
-                taskAccessService,eventBus, nacosServerHolder, fastSyncHelper), 0, 3000,
+                        taskAccessService,eventBus, nacosServerHolder, fastSyncHelper), 0, 3000,
                 TimeUnit.MILLISECONDS);
     }
 
@@ -88,21 +88,12 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
 
             Long start = System.currentTimeMillis();
             try {
-                // MetadataDO metadataDO = metadataAccessService.getMetadataByKey(JmsfConstants.CLUSTER_LEADER);
-                // if (Objects.isNull(metadataDO)) {
-                //     metadataDO = new MetadataDO();
-                //     metadataDO.setMetaKey(JmsfConstants.CLUSTER_LEADER);
-                //     metadataDO.setMetaValue(SkyWalkerUtil.getLocalIp());
-                //     metadataDO.setVersion(MD5Utils.encodeHexString(metadataDO.getMetaValue().getBytes(StandardCharsets.UTF_8)));
-                //     metadataDO.setExpirationTime(System.currentTimeMillis() + 10000);
-                //     metadataAccessService.saveMetadataByKey(metadataDO);
-                // }else if (Objects.isNull(metadataDO.getExpirationTime()) || metadataDO.getExpirationTime() < System.currentTimeMillis()
-                //         || SkyWalkerUtil.getLocalIp().equals(metadataDO.getMetaValue())) {
-                //     metadataDO.setMetaValue(SkyWalkerUtil.getLocalIp());
-                //     metadataDO.setVersion(MD5Utils.encodeHexString(metadataDO.getMetaValue().getBytes(StandardCharsets.UTF_8)));
-                //     metadataDO.setExpirationTime(System.currentTimeMillis() + 10000);
-                //     metadataAccessService.saveMetadataByKey(metadataDO);
-                // }
+                if (!CampaignTaskTimer.IS_LEADER.get()) {
+                    log.info("The current node is a standby node and does not perform task processing.");
+                    return;
+                } else {
+                    log.info("The current node is a work node and does perform task processing.");
+                }
 
                 Iterable<TaskDO> taskDOS = taskAccessService.findAll();
 
