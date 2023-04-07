@@ -19,6 +19,7 @@ package com.alibaba.nacossync.dao;
 import com.alibaba.nacossync.pojo.QueryCondition;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -104,11 +105,13 @@ public class ClusterAccessService implements PageQueryService<ClusterDO> {
     private List<Predicate> getPredicates(Root<ClusterDO> root, CriteriaBuilder criteriaBuilder, QueryCondition queryCondition) {
 
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(criteriaBuilder.like(root.get("clusterName"), "%" + queryCondition.getServiceName() + "%"));
+        if (StringUtils.isNotBlank(queryCondition.getServiceName())){
+            predicates.add(criteriaBuilder.like(root.get("clusterName"), "%" + queryCondition.getServiceName() + "%"));
+        }
         predicates.add(criteriaBuilder.equal(root.get("tenant"), queryCondition.getTenant()));
         return predicates;
     }
-    
+
     public int findClusterLevel(String sourceClusterId){
         ClusterDO clusterDO = clusterRepository.findByClusterId(sourceClusterId);
         if (clusterDO != null) {

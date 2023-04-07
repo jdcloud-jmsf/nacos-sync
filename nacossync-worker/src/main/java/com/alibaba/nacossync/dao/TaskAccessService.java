@@ -17,6 +17,7 @@
 package com.alibaba.nacossync.dao;
 
 import com.alibaba.nacossync.pojo.QueryCondition;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -87,7 +88,10 @@ public class TaskAccessService implements PageQueryService<TaskDO> {
     private List<Predicate> getPredicates(Root<TaskDO> root, CriteriaBuilder criteriaBuilder, QueryCondition queryCondition) {
 
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(criteriaBuilder.like(root.get("serviceName"), "%" + queryCondition.getServiceName() + "%"));
+        if (StringUtils.isNotBlank(queryCondition.getServiceName())){
+            predicates.add(criteriaBuilder.like(root.get("serviceName"), "%" + queryCondition.getServiceName() + "%"));
+        }
+        predicates.add(criteriaBuilder.equal(root.get("tenant"), queryCondition.getTenant()));
 
         return predicates;
     }
@@ -119,7 +123,7 @@ public class TaskAccessService implements PageQueryService<TaskDO> {
 
                 }, pageable);
     }
-    
+
     public List<TaskDO> findServiceNameIsNull() {
         return taskRepository.findAllByServiceNameEquals("ALL");
     }
