@@ -76,7 +76,7 @@ public class ClusterApi {
 
     @RequestMapping(path = "/v1/cluster/list", method = RequestMethod.GET)
     public ClusterListQueryResult clusters(ClusterListQueryRequest clusterListQueryRequest) {
-        log.info("get cluster list,request tenant is" + clusterListQueryRequest.getTenant());
+        log.info("get cluster list,request tenant is" + clusterListQueryRequest.getTenant() + "clustername is :" + clusterListQueryRequest.getClusterName());
 
         return SkyWalkerTemplate.run(clusterListQueryProcessor, clusterListQueryRequest, new ClusterListQueryResult());
     }
