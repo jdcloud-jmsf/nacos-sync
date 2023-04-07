@@ -36,6 +36,7 @@ import com.alibaba.nacossync.template.processor.ClusterAddProcessor;
 import com.alibaba.nacossync.template.processor.ClusterDeleteProcessor;
 import com.alibaba.nacossync.template.processor.ClusterDetailQueryProcessor;
 import com.alibaba.nacossync.template.processor.ClusterListQueryProcessor;
+import com.mysql.cj.x.protobuf.MysqlxDatatypes;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,17 +53,17 @@ import java.util.List;
 @Slf4j
 @RestController
 public class ClusterApi {
-    
+
     private final ClusterAddProcessor clusterAddProcessor;
-    
+
     private final ClusterDeleteProcessor clusterDeleteProcessor;
-    
+
     private final ClusterDetailQueryProcessor clusterDetailQueryProcessor;
-    
+
     private final ClusterListQueryProcessor clusterListQueryProcessor;
 
     private final ClusterAccessService clusterAccessService;
-    
+
     public ClusterApi(ClusterAddProcessor clusterAddProcessor, ClusterDeleteProcessor clusterDeleteProcessor,
             ClusterDetailQueryProcessor clusterDetailQueryProcessor,
             ClusterListQueryProcessor clusterListQueryProcessor, ClusterAccessService clusterAccessService) {
@@ -72,15 +73,15 @@ public class ClusterApi {
         this.clusterListQueryProcessor = clusterListQueryProcessor;
         this.clusterAccessService = clusterAccessService;
     }
-    
+
     @RequestMapping(path = "/v1/cluster/list", method = RequestMethod.GET)
     public ClusterListQueryResult clusters(ClusterListQueryRequest clusterListQueryRequest) {
-        
+
         return SkyWalkerTemplate.run(clusterListQueryProcessor, clusterListQueryRequest, new ClusterListQueryResult());
     }
 
     @RequestMapping(path = "/v1/cluster/listByMeshId", method = RequestMethod.GET)
-    public ClusterListQueryResult clusters(@RequestParam(name = "meshId") String meshId) {
+    public ClusterListQueryResult clusters(@RequestParam(name = "meshId") String meshId,@RequestParam(name = "tenant") String tenant) {
         ClusterListQueryResult result = new ClusterListQueryResult();
         if (StringUtils.isEmpty(meshId)) {
             result.setSuccess(false);
@@ -89,44 +90,47 @@ public class ClusterApi {
         List<ClusterDO> clusterDOS = clusterAccessService.findByMeshId(meshId);
         List<ClusterModel> clusterModels = new ArrayList<>();
         clusterDOS.forEach(clusterDO -> {
-            ClusterModel clusterModel = new ClusterModel();
-            clusterModel.setClusterId(clusterDO.getClusterId());
-            clusterModel.setClusterName(clusterDO.getClusterName());
-            clusterModel.setClusterType(clusterDO.getClusterType());
-            clusterModel.setConnectKeyList(clusterDO.getConnectKeyList());
-            clusterModel.setNamespace(clusterDO.getNamespace());
-            clusterModel.setMeshId(clusterDO.getMeshId());
-            clusterModels.add(clusterModel);
+            if (StringUtils.equals(clusterDO.getTenant(),"")){
+                ClusterModel clusterModel = new ClusterModel();
+                clusterModel.setClusterId(clusterDO.getClusterId());
+                clusterModel.setClusterName(clusterDO.getClusterName());
+                clusterModel.setClusterType(clusterDO.getClusterType());
+                clusterModel.setConnectKeyList(clusterDO.getConnectKeyList());
+                clusterModel.setNamespace(clusterDO.getNamespace());
+                clusterModel.setMeshId(clusterDO.getMeshId());
+                clusterModel.setTenant(clusterDO.getTenant());
+                clusterModels.add(clusterModel);
+            }
         });
         result.setClusterModels(clusterModels);
         result.setCurrentSize(clusterModels.size());
         return result;
     }
-    
+
     @RequestMapping(path = "/v1/cluster/detail", method = RequestMethod.GET)
     public ClusterDetailQueryResult getByClusterId(ClusterDetailQueryRequest clusterDetailQueryRequest) {
-        
+
         return SkyWalkerTemplate.run(clusterDetailQueryProcessor, clusterDetailQueryRequest,
                 new ClusterDetailQueryResult());
     }
-    
+
     @RequestMapping(path = "/v1/cluster/delete", method = RequestMethod.DELETE)
     public ClusterDeleteResult deleteCluster(ClusterDeleteRequest clusterDeleteRequest) {
-        
+
         return SkyWalkerTemplate.run(clusterDeleteProcessor, clusterDeleteRequest, new ClusterDeleteResult());
-        
+
     }
-    
+
     @RequestMapping(path = "/v1/cluster/add", method = RequestMethod.POST)
     public ClusterAddResult clusterAdd(@RequestBody ClusterAddRequest clusterAddRequest) {
-        
+
         return SkyWalkerTemplate.run(clusterAddProcessor, clusterAddRequest, new ClusterAddResult());
     }
-    
+
     @RequestMapping(path = "/v1/cluster/types", method = RequestMethod.GET)
     public ClusterTypeResult getClusterType() {
-        
+
         return new ClusterTypeResult(ClusterTypeEnum.getClusterTypeCodes());
     }
-    
+
 }

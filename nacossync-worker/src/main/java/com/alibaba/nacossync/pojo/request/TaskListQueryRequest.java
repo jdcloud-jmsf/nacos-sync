@@ -32,4 +32,6 @@ public class TaskListQueryRequest extends BaseRequest {
      * of service name
      */
     private String serviceName;
+
+    private String tenant;
 }

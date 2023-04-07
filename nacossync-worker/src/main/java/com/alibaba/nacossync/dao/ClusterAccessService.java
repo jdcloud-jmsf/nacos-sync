@@ -105,6 +105,7 @@ public class ClusterAccessService implements PageQueryService<ClusterDO> {
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(criteriaBuilder.like(root.get("clusterName"), "%" + queryCondition.getServiceName() + "%"));
+        predicates.add(criteriaBuilder.equal(root.get("tenant"), queryCondition.getTenant()));
         return predicates;
     }
     

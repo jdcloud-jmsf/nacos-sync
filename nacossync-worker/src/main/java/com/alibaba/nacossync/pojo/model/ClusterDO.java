@@ -72,4 +72,5 @@ public class ClusterDO implements Serializable {
     
     private Integer clusterLevel;
 
+    private String tenant;
 }

@@ -27,4 +27,5 @@ public class QueryCondition {
     private Integer id;
     private String serviceName;
     private String clusterName;
+    private String tenant;
 }

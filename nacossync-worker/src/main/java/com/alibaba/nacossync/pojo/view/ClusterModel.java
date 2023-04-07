@@ -48,4 +48,5 @@ public class ClusterModel implements Serializable {
     private String userName;
     private String password;
     private String meshId;
+    private String tenant;
 }

@@ -49,20 +49,14 @@ public class ClusterListQueryProcessor implements
 
         Page<ClusterDO> clusterDOS;
 
+        QueryCondition queryCondition = new QueryCondition();
+        queryCondition.setTenant(clusterListQueryRequest.getTenant());
         if (StringUtils.isNotBlank(clusterListQueryRequest.getClusterName())) {
-
-            QueryCondition queryCondition = new QueryCondition();
             queryCondition.setServiceName(clusterListQueryRequest.getClusterName());
-            clusterDOS = clusterAccessService.findPageCriteria(clusterListQueryRequest.getPageNum() - 1,
-                    clusterListQueryRequest.getPageSize(), queryCondition);
-
-        } else {
-
-            clusterDOS = clusterAccessService.findPageNoCriteria(clusterListQueryRequest.getPageNum() - 1,
-                    clusterListQueryRequest.getPageSize());
-
         }
 
+        clusterDOS = clusterAccessService.findPageCriteria(clusterListQueryRequest.getPageNum() - 1,
+                clusterListQueryRequest.getPageSize(), queryCondition);
         List<ClusterModel> clusterModels = new ArrayList<>();
         clusterDOS.forEach(clusterDO -> {
 
@@ -75,6 +69,7 @@ public class ClusterListQueryProcessor implements
             clusterModel.setMeshId(clusterDO.getMeshId());
             clusterModel.setUserName(clusterDO.getUserName());
             clusterModel.setPassword(clusterDO.getPassword());
+            clusterModel.setTenant(clusterDO.getTenant());
             clusterModels.add(clusterModel);
         });
 

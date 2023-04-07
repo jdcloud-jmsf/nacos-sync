@@ -74,6 +74,7 @@ public class ClusterAddProcessor implements Processor<ClusterAddRequest, Cluster
         clusterDO.setPassword(clusterAddRequest.getPassword());
         clusterDO.setNamespace(clusterAddRequest.getNamespace());
         clusterDO.setMeshId(clusterAddRequest.getMeshId());
+        clusterDO.setTenant(clusterAddRequest.getTenant());
         clusterAccessService.insert(clusterDO);
     }
 }

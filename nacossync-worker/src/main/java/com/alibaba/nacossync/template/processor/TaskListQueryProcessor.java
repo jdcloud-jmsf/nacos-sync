@@ -51,19 +51,15 @@ public class TaskListQueryProcessor implements Processor<TaskListQueryRequest, T
 
         Page<TaskDO> taskDOPage;
 
+        QueryCondition queryCondition = new QueryCondition();
+        queryCondition.setTenant(taskListQueryRequest.getTenant());
         if (StringUtils.isNotBlank(taskListQueryRequest.getServiceName())) {
 
-            QueryCondition queryCondition = new QueryCondition();
             queryCondition.setServiceName(taskListQueryRequest.getServiceName());
-            taskDOPage = taskAccessService.findPageCriteria(taskListQueryRequest.getPageNum() - 1,
-                    taskListQueryRequest.getPageSize(), queryCondition);
-        } else {
-
-            taskDOPage = taskAccessService.findPageNoCriteria(taskListQueryRequest.getPageNum() - 1,
-                    taskListQueryRequest.getPageSize());
-
         }
 
+        taskDOPage = taskAccessService.findPageCriteria(taskListQueryRequest.getPageNum() - 1,
+                taskListQueryRequest.getPageSize(), queryCondition);
         List<TaskModel> taskList = new ArrayList<>();
 
         taskDOPage.forEach(taskDO -> {

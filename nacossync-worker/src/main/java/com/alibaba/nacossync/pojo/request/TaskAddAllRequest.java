@@ -25,22 +25,23 @@ import lombok.Data;
  */
 @Data
 public class TaskAddAllRequest extends BaseRequest {
-    
+
     /**
      * eg: b7bacb110199d5bb83b9757038fadeb0 .
      */
     private String sourceClusterId;
-    
+
     /**
      * eg: bbdad57833a0e4f0981f6f3349005617 .
      */
     private String destClusterId;
-    
+
     /**
      * whether to exclude subscriber.
      */
     private boolean excludeConsumer = true;
 
     private String groupName;
-    
+
+    private String tenant;
 }

@@ -54,4 +54,5 @@ public class ClusterAddRequest extends BaseRequest {
     private String password;
     private String namespace;
     private String meshId;
+    private String tenant;
 }

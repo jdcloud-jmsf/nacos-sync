@@ -27,5 +27,5 @@ public class ClusterListQueryRequest extends BaseRequest {
     private Integer pageNum;
     private Integer pageSize;
     private String  clusterName;
-
+    private String  tenant;
 }
