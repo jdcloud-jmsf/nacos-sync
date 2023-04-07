@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: monitoring.coreos.com/v1
+  kind: PodMonitor
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: jmsfistiomonitor
+      meta.helm.sh/release-namespace: brolly
+    labels:
+      app.kubernetes.io/managed-by: Helm
+      inputType: integrations
+      integration: tpaas-jmsf
+      release: brolly
+    name: tpaas-istio
+    namespace: brolly
+  spec:
+    namespaceSelector:
+      any: true
+    podMetricsEndpoints:
+    - path: /stats/prometheus
+      relabelings:
+      - action: replace
+        sourceLabels:
+        - __meta_kubernetes_pod_name
+        targetLabel: pod_name
+      - action: replace
+        sourceLabels:
+        - __meta_kubernetes_pod_label_app_kubernetes_io_name
+        targetLabel: app_name
+      - action: replace
+        sourceLabels:
+        - __meta_kubernetes_pod_label_app_kubernetes_io_instance
+        targetLabel: app_instance
+      - action: replace
+        sourceLabels:
+        - __meta_kubernetes_pod_label_app_kubernetes_io_component
+        targetLabel: app_component
+      - action: replace
+        sourceLabels:
+        - __meta_kubernetes_pod_label_app_kubernetes_io_deploy_by
+        targetLabel: app_managed_by
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - action: replace
+        regex: ^istio$
+        replacement: tpaas-istio
+        sourceLabels:
+        - app_name
+        targetLabel: integration
+      targetPort: 15090
+    selector:
+      matchLabels:
+        jmsf.service.jindowin.jd.com/injection: "disable"
