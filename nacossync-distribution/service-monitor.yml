@@ -12,7 +12,7 @@ items:
       integration: tpaas-jmsf
       release: mesh
     name: tpaas-jmsf-nacos-sync
-    namespace: mesh
+    namespace: brolly
   spec:
     endpoints:
     - path: /actuator/prometheus
@@ -53,7 +53,7 @@ items:
       - action: labelmap
         regex: __meta_kubernetes_pod_label_(.+)
       - action: replace
-        regex: ^jmsf-scgw$
+        regex: ^jmsf-$
         replacement: tpaas-jmsf
         sourceLabels:
         - app_name
@@ -62,5 +62,4 @@ items:
       any: true
     selector:
       matchLabels:
-        app.kubernetes.io/managed-by: jmsf
-        app.kubernetes.io/name: nacos-sync
+        app: nacos-sync

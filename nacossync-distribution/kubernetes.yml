@@ -8,6 +8,14 @@ items:
     labels:
       expose: "true"
       app: nacos-sync
+      app.kubernetes.io/component: nacos-sync
+      app.kubernetes.io/deploy-by: paas
+      app.kubernetes.io/instance: jmsf
+      app.kubernetes.io/managed-by: jmsf
+      app.kubernetes.io/name: nacos-sync
+      integration: tpaas-jmsf
+      jmsf.jd.com/component: nacos-sync
+      jmsf.jd.com/manage-by: jmsf
     name: nacos-sync
   spec:
     ports:
