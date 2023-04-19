@@ -14,16 +14,20 @@ package com.alibaba.nacossync.extension.holder;
 
 /**
  * Cluster client service
+ *
  * @author paderlol
  * @date 2018-12-24 21:59
  */
 public interface Holder<T> {
 
     /**
-     *  Through the cluster ID and namespace fetch cluster client service
+     * Through the cluster ID and namespace fetch cluster client service
+     *
      * @param clusterId cluster id
      * @return
      * @throws Exception
      */
-     T get(String clusterId) throws Exception;
+    T get(String clusterId) throws Exception;
+
+    void delete(String clusterId);
 }

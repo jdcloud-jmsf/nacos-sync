@@ -45,6 +45,11 @@ public abstract class AbstractServerHolderImpl<T> implements Holder {
         });
     }
 
+    @Override
+    public void delete(String clusterId) {
+        serviceMap.remove(clusterId);
+    }
+
     /**
      * Create real cluster client instance
      *

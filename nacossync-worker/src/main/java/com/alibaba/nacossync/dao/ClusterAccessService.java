@@ -16,6 +16,9 @@
  */
 package com.alibaba.nacossync.dao;
 
+import com.alibaba.nacossync.extension.holder.ConsulServerHolder;
+import com.alibaba.nacossync.extension.holder.EurekaServerHolder;
+import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.pojo.QueryCondition;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,15 +50,26 @@ public class ClusterAccessService implements PageQueryService<ClusterDO> {
     @Autowired
     private ClusterRepository clusterRepository;
 
+    @Autowired
+    private EurekaServerHolder eurekaServerHolder;
+
+    @Autowired
+    private ConsulServerHolder consulServerHolder;
+
+    @Autowired
+    private NacosServerHolder nacosServerHolder;
+
     public ClusterDO insert(ClusterDO clusterDO) {
 
         return clusterRepository.save(clusterDO);
     }
 
     public void deleteByClusterId(String clusterId) {
-
         clusterRepository.deleteByClusterId(clusterId);
-
+        // Remove client cache
+        eurekaServerHolder.delete(clusterId);
+        consulServerHolder.delete(clusterId);
+        nacosServerHolder.delete(clusterId);
     }
 
     public ClusterDO findByClusterId(String clusterId) {
