@@ -70,7 +70,7 @@ public class ClusterDO implements Serializable {
 
     private String meshId;
     
-    private Integer clusterLevel;
+    private int clusterLevel;
 
     private String tenant;
 }
