@@ -10,7 +10,7 @@ items:
     labels:
       inputType: integrations
       integration: tpaas-jmsf
-      release: mesh
+      release: brolly
     name: tpaas-jmsf-nacos-sync
     namespace: brolly
   spec:
