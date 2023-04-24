@@ -81,6 +81,7 @@ public class ClusterTaskAccessService implements PageQueryService<ClusterTaskDO>
     private List<Predicate> getPredicates(Root<ClusterTaskDO> root, CriteriaBuilder criteriaBuilder, QueryCondition queryCondition) {
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(criteriaBuilder.like(root.get("serviceName"), "%" + queryCondition.getServiceName() + "%"));
+        predicates.add(criteriaBuilder.equal(root.get("tenant"), queryCondition.getTenant()));
         return predicates;
     }
 

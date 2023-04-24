@@ -116,6 +116,7 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
         ClusterTaskAddRequest clusterTaskAddRequest = new ClusterTaskAddRequest();
         clusterTaskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
         clusterTaskAddRequest.setDestClusterId(destCluster.getClusterId());
+        clusterTaskAddRequest.setTenant(destCluster.getTenant());
         this.dealClusterTask(addAllRequest, clusterTaskAddRequest);
 
         switch (ClusterTypeEnum.valueOf(sourceCluster.getClusterType())) {
@@ -189,6 +190,7 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
             taskDO.setVersion(clusterTaskAddRequest.getVersion());
             taskDO.setNameSpace(clusterTaskAddRequest.getNameSpace());
             taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
+            taskDO.setTenant(clusterTaskAddRequest.getTenant());
         } else {
             taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
         }

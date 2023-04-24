@@ -199,7 +199,8 @@ public class TaskApi {
         ClusterTaskListQueryResult taskListQueryResult = new ClusterTaskListQueryResult();
         try {
             QueryCondition queryCondition = new QueryCondition();
-            queryCondition.setServiceName(taskListQueryRequest.getTenant());
+            queryCondition.setServiceName(taskListQueryRequest.getServiceName());
+            queryCondition.setTenant(taskListQueryRequest.getTenant());
             clusterTaskDOS = clusterTaskAccessService.findPageCriteria(taskListQueryRequest.getPageNum() - 1,
                     taskListQueryRequest.getPageSize(),queryCondition);
             List<ClusterTaskModel> taskList = new ArrayList<>();

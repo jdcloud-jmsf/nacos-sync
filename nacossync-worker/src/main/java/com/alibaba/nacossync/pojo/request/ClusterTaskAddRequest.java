@@ -14,4 +14,5 @@ public class ClusterTaskAddRequest extends BaseRequest {
     private String destClusterId;
     private String version;
     private String nameSpace;
+    private String tenant;
 }

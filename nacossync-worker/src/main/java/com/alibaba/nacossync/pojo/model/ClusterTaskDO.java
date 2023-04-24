@@ -59,4 +59,6 @@ public class ClusterTaskDO implements Serializable {
      * the current task status
      */
     private String taskStatus;
+
+    private String tenant;
 }
