@@ -12,3 +12,4 @@ node_modules
 test/derby.log
 /console-fe
 .flattened-pom.xml
+*.log
