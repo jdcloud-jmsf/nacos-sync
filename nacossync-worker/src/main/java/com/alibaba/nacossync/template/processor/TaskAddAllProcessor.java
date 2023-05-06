@@ -116,7 +116,7 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
         ClusterTaskAddRequest clusterTaskAddRequest = new ClusterTaskAddRequest();
         clusterTaskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
         clusterTaskAddRequest.setDestClusterId(destCluster.getClusterId());
-        clusterTaskAddRequest.setTenant(destCluster.getTenant());
+        clusterTaskAddRequest.setTenant(addAllRequest.getTenant());
         this.dealClusterTask(addAllRequest, clusterTaskAddRequest);
 
         switch (ClusterTypeEnum.valueOf(sourceCluster.getClusterType())) {
