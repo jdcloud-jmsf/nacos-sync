@@ -133,6 +133,7 @@ public class EurekaSyncToNacosServiceImpl implements SyncService {
         List<InstanceInfo> eurekaInstances)
         throws NacosException {
         if (CollectionUtils.isEmpty(eurekaInstances)) {
+            log.info("eureka instance is empty! taskDO={}", taskDO);
             return;
         }
         for (InstanceInfo instance : eurekaInstances) {

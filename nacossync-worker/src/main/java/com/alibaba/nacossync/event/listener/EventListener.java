@@ -61,15 +61,15 @@ public class EventListener {
     public void listenerSyncTaskEvent(SyncTaskEvent syncTaskEvent) {
         try {
             long start = System.currentTimeMillis();
-            log.info("接收到同步任务：{}", syncTaskEvent.getTaskDO());
+            log.info("Receive sync task: {}", syncTaskEvent.getTaskDO());
             if (syncManagerService.sync(syncTaskEvent.getTaskDO(), null)) {
                 skyWalkerCacheServices.addFinishedTask(syncTaskEvent.getTaskDO());
                 metricsManager.record(MetricsStatisticsType.SYNC_TASK_RT, System.currentTimeMillis() - start);
             } else {
-                log.warn("处理同步失败！listenerSyncTaskEvent sync failure, {}", syncTaskEvent.getTaskDO());
-            }                
+                log.warn("Handler sync failure! listenerSyncTaskEvent sync failure, {}", syncTaskEvent.getTaskDO());
+            }
         } catch (Exception e) {
-            log.warn("处理同步异常！listenerSyncTaskEvent process error", e);
+            log.warn("Handler sync error! listenerSyncTaskEvent process error", e);
         }
 
     }
@@ -79,12 +79,13 @@ public class EventListener {
 
         try {
             long start = System.currentTimeMillis();
+            log.info("Receive delete task: {}", deleteTaskEvent.getTaskDO());
             if (syncManagerService.delete(deleteTaskEvent.getTaskDO())) {
-                skyWalkerCacheServices.addFinishedTask(deleteTaskEvent.getTaskDO());
+                skyWalkerCacheServices.removeFinishedTask(deleteTaskEvent.getTaskDO().getOperationId());
                 metricsManager.record(MetricsStatisticsType.DELETE_TASK_RT, System.currentTimeMillis() - start);
             } else {
                 log.warn("listenerDeleteTaskEvent delete failure");
-            }                
+            }
         } catch (Exception e) {
             log.warn("listenerDeleteTaskEvent process error", e);
         }
