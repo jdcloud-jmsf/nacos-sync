@@ -59,7 +59,7 @@ public class EurekaNamingService {
                 return eurekaHttpResponse.getEntity().getInstances();
             }
         } catch (Exception e) {
-           log.error("Get application info from eureka error!", e);
+            log.warn("Get application info from eureka error! serviceName={}, error={}", serviceName, e.getMessage());
         }
         return null;
     }

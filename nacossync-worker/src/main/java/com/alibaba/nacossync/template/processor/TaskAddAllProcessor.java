@@ -254,6 +254,7 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
             taskDO.setWorkerIp(SkyWalkerUtil.getLocalIp());
             taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
             taskDO.setClusterTaskId(SkyWalkerUtil.generateClusterTaskId(taskAddRequest));
+            taskDO.setTenant(taskAddRequest.getTenant());
         } else {
             taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
             taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
