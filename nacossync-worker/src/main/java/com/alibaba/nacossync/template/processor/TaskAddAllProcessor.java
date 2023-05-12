@@ -24,6 +24,7 @@ import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacossync.constant.ClusterTypeEnum;
@@ -33,7 +34,9 @@ import com.alibaba.nacossync.dao.ClusterTaskAccessService;
 import com.alibaba.nacossync.dao.TaskAccessService;
 import com.alibaba.nacossync.exception.SkyWalkerException;
 import com.alibaba.nacossync.extension.SyncManagerService;
+import com.alibaba.nacossync.extension.eureka.EurekaNamingService;
 import com.alibaba.nacossync.extension.holder.ConsulServerHolder;
+import com.alibaba.nacossync.extension.holder.EurekaServerHolder;
 import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.pojo.model.ClusterDO;
 import com.alibaba.nacossync.pojo.model.ClusterTaskDO;
@@ -47,6 +50,15 @@ import com.alibaba.nacossync.util.SkyWalkerUtil;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
+import com.netflix.appinfo.ApplicationInfoManager;
+import com.netflix.appinfo.EurekaInstanceConfig;
+import com.netflix.appinfo.InstanceInfo;
+import com.netflix.appinfo.MyDataCenterInstanceConfig;
+import com.netflix.appinfo.providers.EurekaConfigBasedInstanceInfoProvider;
+import com.netflix.discovery.*;
+import com.netflix.discovery.shared.Application;
+import com.netflix.discovery.shared.Applications;
+import com.netflix.discovery.shared.transport.jersey.JerseyEurekaHttpClientFactory;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -86,15 +98,19 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
 
     private final ConsulServerHolder consulServerHolder;
 
+    private final EurekaServerHolder eurekaServerHolder;
+
     public TaskAddAllProcessor(NacosServerHolder nacosServerHolder, SyncManagerService syncManagerService,
                                TaskAccessService taskAccessService, ClusterAccessService clusterAccessService,
-                               ClusterTaskAccessService clusterTaskAccessService, ConsulServerHolder consulServerHolder) {
+                               ClusterTaskAccessService clusterTaskAccessService, ConsulServerHolder consulServerHolder,
+                               EurekaServerHolder eurekaServerHolder) {
         this.nacosServerHolder = nacosServerHolder;
         this.syncManagerService = syncManagerService;
         this.taskAccessService = taskAccessService;
         this.clusterAccessService = clusterAccessService;
         this.clusterTaskAccessService = clusterTaskAccessService;
         this.consulServerHolder = consulServerHolder;
+        this.eurekaServerHolder = eurekaServerHolder;
     }
 
     @Override
@@ -147,6 +163,7 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
                     taskAddRequest.setDestClusterId(destCluster.getClusterId());
                     taskAddRequest.setServiceName(serviceView.getName());
                     taskAddRequest.setGroupName(serviceView.getGroupName());
+                    taskAddRequest.setTenant(sourceCluster.getTenant());
                     this.dealTask(addAllRequest, taskAddRequest);
                 }
                 break;
@@ -167,6 +184,7 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
                         taskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
                         taskAddRequest.setDestClusterId(destCluster.getClusterId());
                         taskAddRequest.setServiceName(s);
+                        taskAddRequest.setTenant(sourceCluster.getTenant());
                         // taskAddRequest.setGroupName(serviceView.getGroupName());
                         try {
                             this.dealTask(addAllRequest, taskAddRequest);
@@ -174,6 +192,28 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
                             throw new RuntimeException(e);
                         }
                     });
+                }
+            case EUREKA:
+                EurekaNamingService eurekaNamingService = eurekaServerHolder.get(sourceCluster.getClusterId());
+                if (eurekaNamingService == null) {
+                    throw new SkyWalkerException("The cluster was not found.");
+                }
+                Applications applications = eurekaNamingService.getApplications();
+                if (applications == null) {
+                    break;
+                }
+                for (Application registeredApplication : applications.getRegisteredApplications()) {
+                    TaskAddRequest taskAddRequest = new TaskAddRequest();
+                    taskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
+                    taskAddRequest.setDestClusterId(destCluster.getClusterId());
+                    taskAddRequest.setServiceName(registeredApplication.getName());
+                    taskAddRequest.setTenant(sourceCluster.getTenant());
+                    // taskAddRequest.setGroupName(serviceView.getGroupName());
+                    try {
+                        this.dealTask(addAllRequest, taskAddRequest);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
         }
     }

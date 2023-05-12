@@ -14,8 +14,10 @@ package com.alibaba.nacossync.extension.eureka;
 
 import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.shared.Application;
+import com.netflix.discovery.shared.Applications;
 import com.netflix.discovery.shared.transport.EurekaHttpClient;
 import com.netflix.discovery.shared.transport.EurekaHttpResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.Objects;
  * @author liu jun jie
  * @date 2019-06-26
  */
+@Slf4j
 public class EurekaNamingService {
     private EurekaHttpClient eurekaHttpClient;
     private EurekaBeatReactor beatReactor;
@@ -50,11 +53,19 @@ public class EurekaNamingService {
     }
 
     public List<InstanceInfo> getApplications(String serviceName) {
-        EurekaHttpResponse<Application> eurekaHttpResponse =
-                eurekaHttpClient.getApplication(serviceName);
-        if (Objects.requireNonNull(HttpStatus.resolve(eurekaHttpResponse.getStatusCode())).is2xxSuccessful()) {
-            return eurekaHttpResponse.getEntity().getInstances();
+        try {
+            EurekaHttpResponse<Application> eurekaHttpResponse = eurekaHttpClient.getApplication(serviceName);
+            if (Objects.requireNonNull(HttpStatus.resolve(eurekaHttpResponse.getStatusCode())).is2xxSuccessful()) {
+                return eurekaHttpResponse.getEntity().getInstances();
+            }
+        } catch (Exception e) {
+           log.error("Get application info from eureka error!", e);
         }
         return null;
+    }
+
+    public Applications getApplications() {
+        EurekaHttpResponse<Applications> response = eurekaHttpClient.getApplications();
+        return response.getEntity();
     }
 }
