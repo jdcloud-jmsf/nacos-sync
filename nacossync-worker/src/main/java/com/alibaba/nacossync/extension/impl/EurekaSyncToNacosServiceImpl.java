@@ -107,7 +107,35 @@ public class EurekaSyncToNacosServiceImpl implements SyncService {
                 }
                 addValidInstance(taskDO, destNamingService, eurekaInstances);
             }
-            specialSyncEventBus.subscribe(taskDO, t->sync(t, index));
+            specialSyncEventBus.subscribe(taskDO, t->syncTask(t, index));
+        } catch (Exception e) {
+            log.error("sync task from eureka to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
+            metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean syncTask(TaskDO taskDO,Integer index) {
+        try {
+
+            EurekaNamingService eurekaNamingService = eurekaServerHolder.get(taskDO.getSourceClusterId());
+            NamingService destNamingService = nacosServerHolder.get(taskDO.getDestClusterId());
+
+            List<InstanceInfo> eurekaInstances = eurekaNamingService.getApplications(taskDO.getServiceName());
+            List<Instance> nacosInstances = destNamingService.getAllInstances(taskDO.getServiceName(),
+                    NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
+
+            if (CollectionUtils.isEmpty(eurekaInstances)) {
+                // Clear all instance from Nacos
+                deleteAllInstance(taskDO, destNamingService, nacosInstances);
+            } else {
+                if (!CollectionUtils.isEmpty(nacosInstances)) {
+                    // Remove invalid instance from Nacos
+                    removeInvalidInstance(taskDO, destNamingService, eurekaInstances, nacosInstances);
+                }
+                addValidInstance(taskDO, destNamingService, eurekaInstances);
+            }
         } catch (Exception e) {
             log.error("sync task from eureka to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);

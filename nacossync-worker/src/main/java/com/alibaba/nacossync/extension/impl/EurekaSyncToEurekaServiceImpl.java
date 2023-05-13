@@ -90,7 +90,31 @@ public class EurekaSyncToEurekaServiceImpl implements SyncService {
                 }
                 addValidInstance(taskDO, destEurekaNamingService, eurekaInstances);
             }
-            specialSyncEventBus.subscribe(taskDO, t->sync(t, index));
+            specialSyncEventBus.subscribe(taskDO, t -> syncTask(t, index));
+        } catch (Exception e) {
+            log.error("sync task from eureka to eureka was failed, taskId:{}", taskDO.getTaskId(), e);
+            metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean syncTask(TaskDO taskDO, Integer index) {
+        try {
+            EurekaNamingService eurekaNamingService = eurekaServerHolder.get(taskDO.getSourceClusterId());
+            EurekaNamingService destEurekaNamingService = eurekaServerHolder.get(taskDO.getDestClusterId());
+            List<InstanceInfo> eurekaInstances = eurekaNamingService.getApplications(taskDO.getServiceName());
+            List<InstanceInfo> destEurekaInstances = destEurekaNamingService.getApplications(taskDO.getServiceName());
+            if (CollectionUtils.isEmpty(eurekaInstances)) {
+                // Clear all instance from Nacos
+                deleteAllInstanceFromEureka(taskDO, destEurekaNamingService, destEurekaInstances);
+            } else {
+                if (!CollectionUtils.isEmpty(destEurekaInstances)) {
+                    // Remove invalid instance from Nacos
+                    removeInvalidInstance(taskDO, destEurekaNamingService, eurekaInstances, destEurekaInstances);
+                }
+                addValidInstance(taskDO, destEurekaNamingService, eurekaInstances);
+            }
         } catch (Exception e) {
             log.error("sync task from eureka to eureka was failed, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
@@ -118,9 +142,7 @@ public class EurekaSyncToEurekaServiceImpl implements SyncService {
             if (needSync(instance.getMetadata())) {
                 log.info("Delete service instance from Eureka, serviceName={}, Ip={}, port={}",
                         instance.getAppName(), instance.getIPAddr(), instance.getPort());
-                if (needDelete(instance.getMetadata(), taskDO)) {
-                    destEurekaNamingService.deregisterInstance(instance);
-                }
+                destEurekaNamingService.deregisterInstance(instance);
             }
         }
     }

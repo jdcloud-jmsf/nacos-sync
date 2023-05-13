@@ -38,6 +38,7 @@ import static com.alibaba.nacossync.constant.SkyWalkerConstants.MAX_THREAD_NUM;
 
 /**
  * multi-threaded synchronization Task DO.
+ *
  * @ClassName: FastSyncHelper
  * @Author: ChenHao26
  * @Date: 2022/7/19 17:02
@@ -46,91 +47,99 @@ import static com.alibaba.nacossync.constant.SkyWalkerConstants.MAX_THREAD_NUM;
 @Service
 @Slf4j
 public class FastSyncHelper {
-    
+
     @Autowired
     private SkyWalkerCacheServices skyWalkerCacheServices;
-    
+
     @Autowired
     private MetricsManager metricsManager;
-    
+
     @Autowired
     private SyncManagerService syncManagerService;
-    
+
     @Autowired
     private NacosSyncToNacosServiceImpl nacosSyncToNacosService;
-    
+
     /**
      * every 200 services start a thread to perform synchronization.
+     *
      * @param taskDOS task list
      */
     public void syncWithThread(List<TaskDO> taskDOS) {
         long startTime = System.currentTimeMillis();
         List<List<TaskDO>> taskGroupList = averageAssign(taskDOS, MAX_THREAD_NUM);
         CountDownLatch countDownLatch = new CountDownLatch(taskGroupList.size());
-    
+
         // 创建分组线程，每个线程执行自己的任务
         for (int i = 0; i < taskGroupList.size(); i++) {
             new SyncThread(i, countDownLatch, taskGroupList.get(i)).start();
         }
         try {
             countDownLatch.await();
-        }catch (InterruptedException exception) {
+        } catch (InterruptedException exception) {
             exception.printStackTrace();
         }
-        
-        log.info("新增同步任务数量 {}, 执行耗时：{}ms",taskDOS.size() , System.currentTimeMillis() - startTime);
+
+        log.info("新增同步任务数量 {}, 执行耗时：{}ms", taskDOS.size(), System.currentTimeMillis() - startTime);
     }
-    
+
     /**
      * every 200 services start a thread to perform synchronization.
-     * @param taskDO task info
+     *
+     * @param taskDO         task info
      * @param filterServices filterServices
      */
-    public  void syncWithThread(TaskDO taskDO, List<String> filterServices) {
-        long start=System.currentTimeMillis();
+    public void syncWithThread(TaskDO taskDO, List<String> filterServices) {
+        long start = System.currentTimeMillis();
         List<List<String>> lists = averageAssign(filterServices, MAX_THREAD_NUM);
         CountDownLatch countDownLatch = new CountDownLatch(lists.size());
-        
+
         //创建分组线程，每个线程执行自己的任务
         for (int i = 0; i < lists.size(); i++) {
             new SyncThread(i, countDownLatch, lists.get(i), taskDO).start();
         }
-        
+
         try {
             countDownLatch.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        log.info("新增同步任务数量 {} ,执行耗时：{} ms",filterServices.size(),System.currentTimeMillis() - start);
+        log.info("新增同步任务数量 {} ,执行耗时：{} ms", filterServices.size(), System.currentTimeMillis() - start);
     }
-    
+
     class SyncThread extends Thread {
         private int index;
-        
+
         private CountDownLatch countDownLatch;
-        
+
         private List<String> serviceNames;
-        
+
         private List<TaskDO> taskDOS;
-        
+
         private TaskDO taskDO;
-    
+
         public SyncThread(int index, CountDownLatch countDownLatch, List<String> serviceNames, TaskDO taskDO) {
             this.index = index;
             this.countDownLatch = countDownLatch;
             this.serviceNames = serviceNames;
             this.taskDO = taskDO;
         }
-    
+
         public SyncThread(int index, CountDownLatch countDownLatch, List<TaskDO> taskDOS) {
             this.index = index;
             this.countDownLatch = countDownLatch;
             this.taskDOS = taskDOS;
         }
-        
+
         //创建任务，执行数据同步
         @Override
         public void run() {
+            if (!CampaignTaskTimer.IS_LEADER.get()) {
+                log.info("The current node is a standby node and does not perform multi-thread task processing.");
+                return;
+            } else {
+                log.info("The current node is a work node and does perform multi-thread task processing.");
+            }
             if (!CollectionUtils.isEmpty(serviceNames)) {
                 //  执行数据同步
                 for (String serviceName : serviceNames) {
@@ -145,27 +154,27 @@ public class FastSyncHelper {
             countDownLatch.countDown();
         }
     }
-    
+
     private void sync(TaskDO taskDO, String serviceName, int index) {
         long startTime = System.currentTimeMillis();
         TaskDO task = new TaskDO();
-        BeanUtils.copyProperties(taskDO,task);
+        BeanUtils.copyProperties(taskDO, task);
         task.setServiceName(serviceName);
         task.setOperationId(taskDO.getTaskId() + serviceName);
-        if (syncManagerService.sync(task,index)) {
+        if (syncManagerService.sync(task, index)) {
             skyWalkerCacheServices.addFinishedTask(task);
             log.info("sync thread : {} sync finish ,time consuming ：{}", Thread.currentThread().getId(), System.currentTimeMillis() - startTime);
             metricsManager.record(MetricsStatisticsType.SYNC_TASK_RT, System.currentTimeMillis() - startTime);
-        }else {
+        } else {
             log.warn("listenerSyncTaskEvent sync failure.");
         }
     }
-    
+
     /**
      * 将一个List均分成n个list,主要通过偏移量来实现的
      *
      * @param source 源集合
-     * @param limit 最大值
+     * @param limit  最大值
      * @return
      */
     public static <T> List<List<T>> averageAssign(List<T> source, int limit) {
