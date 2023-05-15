@@ -27,6 +27,7 @@ import com.alibaba.nacossync.pojo.model.ClusterTaskDO;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.pojo.request.TaskAddAllRequest;
 import com.alibaba.nacossync.template.processor.TaskAddAllProcessor;
+import com.alibaba.nacossync.util.SkyWalkerUtil;
 import io.meshware.common.timer.ScheduleTask;
 import io.meshware.common.timer.Timer;
 import lombok.extern.slf4j.Slf4j;
@@ -102,8 +103,11 @@ public class QuerySyncClusterTaskTimer implements CommandLineRunner {
                     if (TaskStatusEnum.DELETE.getCode().equals(taskDO.getTaskStatus())) {
                         List<TaskDO> taskDOList = taskAccessService.findByClusterTaskId(taskDO.getClusterTaskId());
                         for (TaskDO task : taskDOList) {
+                            String oldOperationId = task.getOperationId();
+                            task.setOperationId(SkyWalkerUtil.generateOperationId());
                             task.setTaskStatus(TaskStatusEnum.DELETE.getCode());
                             taskAccessService.addTask(task);
+                            skyWalkerCacheServices.removeFinishedTask(oldOperationId);
                         }
                     }
                 });

@@ -24,7 +24,6 @@ import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacossync.constant.ClusterTypeEnum;
@@ -50,15 +49,8 @@ import com.alibaba.nacossync.util.SkyWalkerUtil;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
-import com.netflix.appinfo.ApplicationInfoManager;
-import com.netflix.appinfo.EurekaInstanceConfig;
-import com.netflix.appinfo.InstanceInfo;
-import com.netflix.appinfo.MyDataCenterInstanceConfig;
-import com.netflix.appinfo.providers.EurekaConfigBasedInstanceInfoProvider;
-import com.netflix.discovery.*;
 import com.netflix.discovery.shared.Application;
 import com.netflix.discovery.shared.Applications;
-import com.netflix.discovery.shared.transport.jersey.JerseyEurekaHttpClientFactory;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -71,10 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.alibaba.nacossync.constant.SkyWalkerConstants.GROUP_NAME_PARAM;
-import static com.alibaba.nacossync.constant.SkyWalkerConstants.PAGE_NO;
-import static com.alibaba.nacossync.constant.SkyWalkerConstants.PAGE_SIZE;
-import static com.alibaba.nacossync.constant.SkyWalkerConstants.SERVICE_NAME_PARAM;
+import static com.alibaba.nacossync.constant.SkyWalkerConstants.*;
 
 /**
  * @author NacosSync

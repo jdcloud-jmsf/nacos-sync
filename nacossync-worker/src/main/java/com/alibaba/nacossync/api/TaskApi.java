@@ -13,6 +13,7 @@
 
 package com.alibaba.nacossync.api;
 
+import com.alibaba.nacossync.cache.SkyWalkerCacheServices;
 import com.alibaba.nacossync.constant.TaskStatusEnum;
 import com.alibaba.nacossync.dao.ClusterAccessService;
 import com.alibaba.nacossync.dao.ClusterTaskAccessService;
@@ -34,6 +35,7 @@ import com.alibaba.nacossync.template.processor.TaskDeleteProcessor;
 import com.alibaba.nacossync.template.processor.TaskDetailProcessor;
 import com.alibaba.nacossync.template.processor.TaskListQueryProcessor;
 import com.alibaba.nacossync.template.processor.TaskUpdateProcessor;
+import com.alibaba.nacossync.util.SkyWalkerUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.util.CollectionUtils;
@@ -75,11 +77,14 @@ public class TaskApi {
 
     private final ClusterAccessService clusterAccessService;
 
+    private final SkyWalkerCacheServices skyWalkerCacheServices;
+
     public TaskApi(TaskUpdateProcessor taskUpdateProcessor, TaskAddProcessor taskAddProcessor,
                    TaskAddAllProcessor taskAddAllProcessor, TaskDeleteProcessor taskDeleteProcessor,
                    TaskDeleteInBatchProcessor taskDeleteInBatchProcessor, TaskListQueryProcessor taskListQueryProcessor,
                    TaskDetailProcessor taskDetailProcessor, TaskAccessService taskAccessService,
-                   ClusterTaskAccessService clusterTaskAccessService, ClusterAccessService clusterAccessService) {
+                   ClusterTaskAccessService clusterTaskAccessService, ClusterAccessService clusterAccessService,
+                   SkyWalkerCacheServices skyWalkerCacheServices) {
         this.taskUpdateProcessor = taskUpdateProcessor;
         this.taskAddProcessor = taskAddProcessor;
         this.taskAddAllProcessor = taskAddAllProcessor;
@@ -90,6 +95,7 @@ public class TaskApi {
         this.taskAccessService = taskAccessService;
         this.clusterTaskAccessService = clusterTaskAccessService;
         this.clusterAccessService = clusterAccessService;
+        this.skyWalkerCacheServices = skyWalkerCacheServices;
     }
 
     @RequestMapping(path = "/v1/task/list", method = RequestMethod.GET)
@@ -264,8 +270,11 @@ public class TaskApi {
                 clusterTaskAccessService.addTask(clusterTaskDO);
                 List<TaskDO> taskDOList = taskAccessService.findByClusterTaskId(clusterTaskDO.getClusterTaskId());
                 for (TaskDO taskDO : taskDOList) {
+                    String operationId = taskDO.getOperationId();
+                    taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
                     taskDO.setTaskStatus(TaskStatusEnum.valueOf(taskUpdateRequest.getTaskStatus()).getCode());
                     taskAccessService.addTask(taskDO);
+                    skyWalkerCacheServices.removeFinishedTask(operationId);
                 }
             }
         } catch (Throwable e) {
