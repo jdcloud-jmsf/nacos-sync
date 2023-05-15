@@ -70,6 +70,7 @@ public class TaskListQueryProcessor implements Processor<TaskListQueryRequest, T
             taskModel.setServiceName(taskDO.getServiceName());
             taskModel.setGroupName(taskDO.getGroupName());
             taskModel.setTaskStatus(taskDO.getTaskStatus());
+            taskModel.setTenant(taskDO.getTenant());
             taskList.add(taskModel);
         });
 

@@ -216,6 +216,7 @@ public class TaskApi {
                 taskModel.setSourceClusterId(taskDO.getSourceClusterId());
                 taskModel.setGroupName(taskDO.getGroupName());
                 taskModel.setTaskStatus(taskDO.getTaskStatus());
+                taskModel.setTenant(taskDO.getTenant());
                 taskList.add(taskModel);
             });
             taskListQueryResult.setTaskModels(taskList);
@@ -242,6 +243,7 @@ public class TaskApi {
             taskModel.setGroupName(clusterTaskDO.getGroupName());
             taskModel.setSourceClusterId(clusterTaskDO.getSourceClusterId());
             taskModel.setTaskStatus(clusterTaskDO.getTaskStatus());
+            taskModel.setTenant(clusterTaskDO.getTenant());
             taskModel.setClusterTaskId(clusterTaskDO.getClusterTaskId());
             result.setClusterTaskModel(taskModel);
         } catch (Exception e) {

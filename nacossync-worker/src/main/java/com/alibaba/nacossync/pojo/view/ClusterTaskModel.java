@@ -31,4 +31,5 @@ public class ClusterTaskModel {
     private String destClusterId;
     private String groupName;
     private String taskStatus;
+    private String tenant;
 }
