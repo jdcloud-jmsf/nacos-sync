@@ -118,12 +118,6 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
             throw new SkyWalkerException("current sync type not supported.");
         }
 
-        ClusterTaskAddRequest clusterTaskAddRequest = new ClusterTaskAddRequest();
-        clusterTaskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
-        clusterTaskAddRequest.setDestClusterId(destCluster.getClusterId());
-        clusterTaskAddRequest.setTenant(addAllRequest.getTenant());
-        this.dealClusterTask(addAllRequest, clusterTaskAddRequest);
-
         switch (ClusterTypeEnum.valueOf(sourceCluster.getClusterType())) {
             case NACOS:
                 final NamingService sourceNamingService = nacosServerHolder.get(sourceCluster.getClusterId());
@@ -205,6 +199,12 @@ public class TaskAddAllProcessor implements Processor<TaskAddAllRequest, TaskAdd
                     }
                 }
         }
+
+        ClusterTaskAddRequest clusterTaskAddRequest = new ClusterTaskAddRequest();
+        clusterTaskAddRequest.setSourceClusterId(sourceCluster.getClusterId());
+        clusterTaskAddRequest.setDestClusterId(destCluster.getClusterId());
+        clusterTaskAddRequest.setTenant(addAllRequest.getTenant());
+        this.dealClusterTask(addAllRequest, clusterTaskAddRequest);
     }
 
     private void dealClusterTask(TaskAddAllRequest addAllRequest, ClusterTaskAddRequest clusterTaskAddRequest) throws Exception {
